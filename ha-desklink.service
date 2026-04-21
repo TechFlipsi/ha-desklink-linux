@@ -1,0 +1,14 @@
+[Unit]
+Description=HA DeskLink - Home Assistant Companion for Linux
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ha-desklink
+Restart=on-failure
+RestartSec=10
+Environment=DOTNET_ENVIRONMENT=Production
+
+[Install]
+WantedBy=multi-user.target

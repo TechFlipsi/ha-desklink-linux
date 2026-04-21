@@ -1,0 +1,47 @@
+#nullable enable
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+namespace HaDeskLink;
+
+/// <summary>
+/// Interactive setup wizard for first-time HA connection (console-based).
+/// </summary>
+public class SetupWizard
+{
+    public string HaUrl { get; private set; } = "";
+    public string HaToken { get; private set; } = "";
+    public bool VerifySsl { get; private set; } = false;
+
+    public async Task<bool> RunAsync()
+    {
+        Console.WriteLine("=== HA DeskLink Linux Setup ===\n");
+
+        Console.Write("Home Assistant URL (z.B. https://homeassistant.local:8123): ");
+        HaUrl = Console.ReadLine()?.Trim() ?? "";
+
+        Console.Write("Long-Lived Access Token (HA → Profil → Sicherheit): ");
+        HaToken = Console.ReadLine()?.Trim() ?? "";
+
+        Console.Write("SSL-Zertifikat prüfen? (j/n, Standard: n): ");
+        var ssl = Console.ReadLine()?.Trim().ToLowerInvariant();
+        VerifySsl = ssl == "j" || ssl == "y" || ssl == "ja" || ssl == "yes";
+
+        Console.WriteLine("\nVerbinde mit Home Assistant...");
+
+        try
+        {
+            var configDir = Config.GetConfigDir();
+            var api = new HaApiClient(configDir, VerifySsl);
+            await api.RegisterAsync(HaUrl, HaToken);
+            Console.WriteLine("✓ Verbindung erfolgreich!");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ Verbindung fehlgeschlagen: {ex.Message}");
+            return false;
+        }
+    }
+}

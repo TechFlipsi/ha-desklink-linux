@@ -1,0 +1,88 @@
+name: Build HA DeskLink Linux
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - runtime: linux-x64
+            artifact: ha-desklink-linux-x64
+          - runtime: linux-arm64
+            artifact: ha-desklink-linux-arm64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish
+        run: |
+          dotnet publish src/HaDeskLink -c Release -r ${{ matrix.runtime }} --self-contained -o publish
+
+      - name: Create archive
+        run: |
+          cp VERSION publish/
+          cp ha-desklink.service publish/
+          tar czf ${{ matrix.artifact }}.tar.gz -C publish .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*.tar.gz
+          body: |
+            HA DeskLink Linux v${{ steps.version.outputs.VERSION }}
+
+            ## Installation
+            ```bash
+            tar xzf ha-desklink-linux-x64.tar.gz
+            ./ha-desklink --setup
+            sudo cp ha-desklink /usr/local/bin/
+            sudo cp ha-desklink.service /etc/systemd/system/
+            sudo systemctl daemon-reload
+            sudo systemctl enable --now ha-desklink
+            ```
+
+            **Für ARM64 (Raspberry Pi etc.):** `ha-desklink-linux-arm64.tar.gz` verwenden.
+
+            ## Features
+            - CPU, RAM, Disk, Akku, Netzwerk-Sensoren
+            - PC-Befehle (Shutdown, Restart, Lock, etc.)
+            - Push-Benachrichtigungen via WebSocket
+            - Auto-Update von GitHub
+            - Headless Daemon (systemd)
+          generate_release_notes: false

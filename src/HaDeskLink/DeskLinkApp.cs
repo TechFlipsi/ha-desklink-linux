@@ -1,0 +1,148 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Configuration;
+
+namespace HaDeskLink;
+
+/// <summary>
+/// Main application - headless daemon for Linux with optional Avalonia UI dashboard.
+/// </summary>
+public class DeskLinkApp : BackgroundService
+{
+    private readonly Config _config;
+    private readonly HaApiClient _api;
+    private SensorManager? _sensors;
+    private HaWebSocketClient? _wsClient;
+    private readonly Dictionary<string, object> _lastSensorStates = new();
+
+    public DeskLinkApp(Config config, HaApiClient api)
+    {
+        _config = config;
+        _api = api;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        Console.WriteLine($"[HA DeskLink] v{HaApiClient.GetVersion()} starting...");
+
+        if (!_api.LoadRegistration())
+        {
+            Console.WriteLine("[HA DeskLink] No registration found. Run setup first: ha-desklink --setup");
+            return;
+        }
+
+        try
+        {
+            _sensors = new SensorManager();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[HA DeskLink] Sensor init failed: {ex.Message}");
+        }
+
+        // Initial sensor registration
+        if (_sensors != null)
+        {
+            try
+            {
+                var initial = _sensors.CollectAll();
+                foreach (var sensor in initial)
+                {
+                    try { await _api.RegisterSensorAsync(sensor); }
+                    catch { }
+                }
+                await _api.UpdateSensorStatesAsync(initial);
+                await _api.SendLocationAsync();
+                await _api.UpdateRegistrationAsync();
+                Console.WriteLine($"[HA DeskLink] Registered {initial.Count} sensors");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[HA DeskLink] Initial registration failed: {ex.Message}");
+            }
+        }
+
+        // Start WebSocket for push notifications
+        var webhookId = _api.GetWebhookId();
+        _wsClient = new HaWebSocketClient(_config.HaUrl, _config.HaToken, webhookId,
+            msg => Console.WriteLine($"[HA DeskLink] Notification: {msg}"));
+        _ = _wsClient.ConnectAsync();
+
+        // Check for updates
+        _ = CheckForUpdatesAsync(stoppingToken);
+
+        // Sensor loop
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                if (_sensors != null)
+                {
+                    var allSensors = _sensors.CollectAll();
+                    var changed = new List<SensorData>();
+                    foreach (var s in allSensors)
+                    {
+                        var key = s.UniqueId;
+                        if (!_lastSensorStates.TryGetValue(key, out var lastState) || !Equals(lastState, s.State))
+                        {
+                            changed.Add(s);
+                            _lastSensorStates[key] = s.State;
+                        }
+                    }
+                    if (changed.Count > 0)
+                        await _api.UpdateSensorStatesAsync(changed);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[HA DeskLink] Sensor update error: {ex.Message}");
+            }
+
+            await Task.Delay(_config.SensorInterval * 1000, stoppingToken);
+        }
+    }
+
+    private async Task CheckForUpdatesAsync(CancellationToken ct)
+    {
+        // Initial check
+        try
+        {
+            var updateUrl = await _api.CheckForUpdateAsync(includePrerelease: _config.UpdateChannel == "prerelease");
+            if (updateUrl != null)
+            {
+                Console.WriteLine($"[HA DeskLink] Update available: {updateUrl}");
+                Console.WriteLine("[HA DeskLink] Run: ha-desklink --update to install");
+            }
+        }
+        catch { }
+
+        // Periodic check every 2 hours
+        while (!ct.IsCancellationRequested)
+        {
+            try { await Task.Delay(TimeSpan.FromHours(2), ct); }
+            catch { break; }
+            try
+            {
+                var updateUrl = await _api.CheckForUpdateAsync(includePrerelease: _config.UpdateChannel == "prerelease");
+                if (updateUrl != null)
+                {
+                    Console.WriteLine($"[HA DeskLink] Update available: {updateUrl}");
+                    Console.WriteLine("[HA DeskLink] Run: ha-desklink --update to install");
+                }
+            }
+            catch { }
+        }
+    }
+
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        Console.WriteLine("[HA DeskLink] Stopping...");
+        _wsClient?.Dispose();
+        await base.StopAsync(cancellationToken);
+    }
+}
