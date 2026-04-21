@@ -10,6 +10,7 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 - 🌡️ **CPU & GPU Temperatur** – via `/sys/class/thermal` und `hwmon`
 - 📊 **Alle Sensoren** – CPU, RAM, alle Laufwerke, Akku, Uptime, Netzwerk
 - 🖥️ **PC-Befehle aus HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Lautstärke
+- 🖥️ **Grafische Oberfläche** – Avalonia UI Dashboard mit Status, Sensoren & Einrichtung
 - 📬 **Push-Benachrichtigungen** – WebSocket-basiert, wie die Handy-App
 - 🔌 **mobile_app Protokoll** – identisch zur Windows-App, keine Extra-Konfiguration in HA nötig
 - 🔄 **Auto-Update** – Alle 2 Stunden wird nach Updates gesucht
@@ -36,7 +37,8 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 ## CLI-Befehle
 | Befehl | Beschreibung |
 |---|---|
-| `ha-desklink` | Als Daemon starten |
+| `ha-desklink` | Mit grafischer Oberfläche starten |
+| `ha-desklink --daemon` | Als Hintergrund-Daemon starten (ohne GUI) |
 | `ha-desklink --setup` | Einrichtung (HA URL + Token) |
 | `ha-desklink --reset-device` | Neue Geräte-ID erstellen |
 | `ha-desklink --update` | Nach Update suchen |

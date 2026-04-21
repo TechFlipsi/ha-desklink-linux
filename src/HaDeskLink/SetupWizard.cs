@@ -1,12 +1,10 @@
-#nullable enable
 using System;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace HaDeskLink;
 
 /// <summary>
-/// Interactive setup wizard for first-time HA connection (console-based).
+/// Console-based setup wizard (for --setup without GUI).
 /// </summary>
 public class SetupWizard
 {

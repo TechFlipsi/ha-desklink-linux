@@ -1,43 +1,35 @@
 #nullable enable
 using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
+using Avalonia;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HaDeskLink;
 
 class Program
 {
-    static async Task<int> Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         // CLI argument handling
         if (args.Length > 0)
         {
             switch (args[0].ToLowerInvariant())
             {
+                case "--daemon":
+                case "-d":
+                    return await RunDaemonAsync();
+
                 case "--setup":
                 case "-s":
-                    var wizard = new SetupWizard();
-                    if (await wizard.RunAsync())
-                    {
-                        var config = Config.Load();
-                        config.HaUrl = wizard.HaUrl;
-                        config.HaToken = wizard.HaToken;
-                        config.VerifySsl = wizard.VerifySsl;
-                        config.Save();
-                        Console.WriteLine("Setup abgeschlossen! Starte mit: ha-desklink");
-                        return 0;
-                    }
-                    return 1;
+                    return await RunSetupAsync();
 
                 case "--reset-device":
                     var configDir = Config.GetConfigDir();
                     var api = new HaApiClient(configDir);
                     api.ResetDeviceId();
-                    Console.WriteLine("Neue Geräte-ID erstellt. Starte ha-desklink neu.");
+                    Console.WriteLine("Neue Geräte-ID erstellt. Starte ha-desklink --daemon neu.");
                     return 0;
 
                 case "--update":
@@ -61,21 +53,39 @@ class Program
             }
         }
 
-        // Normal startup as daemon
-        var configFile = Path.Combine(Config.GetConfigDir(), "config.json");
-        if (!File.Exists(Path.Combine(Config.GetConfigDir(), "registration.json")))
+        // Default: start with GUI
+        return RunWithGui();
+    }
+
+    private static int RunWithGui()
+    {
+        var configDir = Config.GetConfigDir();
+        if (!File.Exists(Path.Combine(configDir, "registration.json")))
+        {
+            Console.WriteLine("Keine Verbindung gefunden. Führe zuerst das Setup aus: ha-desklink --setup");
+            return 1;
+        }
+
+        BuildAvaloniaApp().StartWithClassicDesktopLifetime(Array.Empty<string>());
+        return 0;
+    }
+
+    private static async Task<int> RunDaemonAsync()
+    {
+        var configDir = Config.GetConfigDir();
+        if (!File.Exists(Path.Combine(configDir, "registration.json")))
         {
             Console.WriteLine("Keine Verbindung gefunden. Führe zuerst das Setup aus: ha-desklink --setup");
             return 1;
         }
 
         var config = Config.Load();
+        var haApi = new HaApiClient(configDir, config.VerifySsl);
+        haApi.LoadRegistration();
 
         var builder = Host.CreateDefaultBuilder()
-            .ConfigureServices((context, services) =>
+            .ConfigureServices(services =>
             {
-                var haApi = new HaApiClient(Config.GetConfigDir(), config.VerifySsl);
-                haApi.LoadRegistration();
                 services.AddSingleton(config);
                 services.AddSingleton(haApi);
                 services.AddHostedService<DeskLinkApp>();
@@ -84,6 +94,22 @@ class Program
         var host = builder.Build();
         await host.RunAsync();
         return 0;
+    }
+
+    private static async Task<int> RunSetupAsync()
+    {
+        var wizard = new SetupWizard();
+        if (await wizard.RunAsync())
+        {
+            var config = Config.Load();
+            config.HaUrl = wizard.HaUrl;
+            config.HaToken = wizard.HaToken;
+            config.VerifySsl = wizard.VerifySsl;
+            config.Save();
+            Console.WriteLine("Setup abgeschlossen! Starte mit: ha-desklink (GUI) oder ha-desklink --daemon");
+            return 0;
+        }
+        return 1;
     }
 
     private static async Task<int> RunUpdateAsync()
@@ -100,7 +126,7 @@ class Program
             }
 
             Console.WriteLine($"Update gefunden! Downloade von {updateUrl}...");
-            using var client = new HttpClient();
+            using var client = new System.Net.Http.HttpClient();
             client.DefaultRequestHeaders.Add("User-Agent", "HA-DeskLink-Linux");
 
             var tempDir = Path.Combine(Path.GetTempPath(), "HA_DeskLink_Update");
@@ -128,13 +154,13 @@ class Program
 Usage: ha-desklink [OPTION]
 
 Options:
-  --setup, -s       Einrichtung (HA URL + Token eingeben)
+  (kein Argument)   Startet mit grafischer Oberfläche
+  --daemon, -d       Startet als Hintergrund-Daemon (ohne GUI)
+  --setup, -s        Einrichtung (HA URL + Token eingeben)
   --reset-device     Neue Geräte-ID erstellen
   --update, -u       Nach Update suchen
   --version, -v      Version anzeigen
   --help, -h         Diese Hilfe anzeigen
-
-Ohne Argumente startet HA DeskLink als Hintergrund-Daemon.
 
 Systemd Service einrichten:
   sudo cp ha-desklink.service /etc/systemd/system/
@@ -143,4 +169,10 @@ Systemd Service einrichten:
 
 Config: {Config.GetConfigDir()}");
     }
+
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .WithInterFont()
+            .LogToTrace();
 }
