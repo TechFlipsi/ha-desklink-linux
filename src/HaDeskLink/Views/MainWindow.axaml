@@ -37,6 +37,12 @@
             <Button Name="BtnResetDevice" Content="🔑 Neue Geräte-ID" />
         </StackPanel>
 
+        <!-- Links -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16" Margin="0,0,0,4">
+            <Button Name="BtnDiscord" Content="💬 Discord" />
+            <Button Name="BtnGitHub" Content="📦 GitHub" />
+        </StackPanel>
+
         <!-- Info -->
         <TextBlock DockPanel.Dock="Bottom" Text="HA DeskLink läuft als Hintergrund-Dienst (systemd)" 
                    Foreground="Gray" FontSize="11" HorizontalAlignment="Center" Margin="0,8,0,0" />

@@ -34,6 +34,12 @@ public partial class MainWindow : Window
         var btnReset = this.FindControl<Button>("BtnResetDevice");
         if (btnReset != null) btnReset.Click += OnResetDevice;
 
+        var btnDiscord = this.FindControl<Button>("BtnDiscord");
+        if (btnDiscord != null) btnDiscord.Click += (s, e) => OpenUrl("https://discord.gg/HnCZY54U7");
+
+        var btnGitHub = this.FindControl<Button>("BtnGitHub");
+        if (btnGitHub != null) btnGitHub.Click += (s, e) => OpenUrl("https://github.com/TechFlipsi/ha-desklink-linux");
+
         Loaded += OnLoaded;
     }
 
@@ -52,6 +58,12 @@ public partial class MainWindow : Window
             try { Process.Start(new ProcessStartInfo(_haUrl) { UseShellExecute = true }); }
             catch { }
         }
+    }
+
+    private static void OpenUrl(string url)
+    {
+        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch { }
     }
 
     private void OnRefresh(object? sender, RoutedEventArgs e)
