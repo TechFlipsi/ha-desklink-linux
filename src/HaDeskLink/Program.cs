@@ -79,14 +79,14 @@ class Program
             return 1;
         }
 
-        var config = Config.Load();
-        var haApi = new HaApiClient(configDir, config.VerifySsl);
+        var appConfig = Config.Load();
+        var haApi = new HaApiClient(configDir, appConfig.VerifySsl);
         haApi.LoadRegistration();
 
         var builder = Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
-                services.AddSingleton(config);
+                services.AddSingleton(appConfig);
                 services.AddSingleton(haApi);
                 services.AddHostedService<DeskLinkApp>();
             });
