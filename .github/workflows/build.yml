@@ -65,6 +65,8 @@ jobs:
         with:
           files: dist/**/*.tar.gz
           body: |
+            ⚠️ **PRE-RELEASE / BETA** – Diese Version wurde noch nicht auf einem echten Linux-System getestet. Verwendung auf eigene Gefahr!
+
             HA DeskLink Linux v${{ steps.version.outputs.VERSION }}
 
             ## Installation
@@ -86,3 +88,4 @@ jobs:
             - Auto-Update von GitHub
             - Headless Daemon (systemd)
           generate_release_notes: false
+          prerelease: true

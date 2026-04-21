@@ -1,5 +1,7 @@
 # HA DeskLink Linux
 
+⚠️ **PRE-RELEASE / BETA** – Diese Version wurde noch nicht auf einem echten Linux-System getestet. Verwendung auf eigene Gefahr. Feedback und Bug-Reports sind willkommen!
+
 **Linux Companion App für Home Assistant** – headless, nativ, zuverlässig.
 
 Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardware-Sensoren.
@@ -20,8 +22,8 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 - Für Sensoren: `lm-sensors` empfohlen (`sudo apt install lm-sensors`)
 
 ## Installation
-1. Neueste Release von [Releases](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest) herunterladen
-2. Entpacken: `tar xzf ha-desklink-linux.tar.gz`
+1. Neueste `ha-desklink-linux-x64.tar.gz` von [Releases](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest) herunterladen
+2. Entpacken: `tar xzf ha-desklink-linux-x64.tar.gz`
 3. Setup ausführen: `./ha-desklink --setup`
 4. Als Service installieren:
    ```bash
