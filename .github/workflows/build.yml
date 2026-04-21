@@ -89,3 +89,11 @@ jobs:
             - Headless Daemon (systemd)
           generate_release_notes: false
           prerelease: true
+
+      - name: Discord Release Notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          curl -s -X POST -H "Content-Type: application/json" "$DISCORD_WEBHOOK" \
+            -d "{\"username\":\"HA DeskLink Release\",\"embeds\":[{\"title\":\"🐧 HA DeskLink Linux v${VERSION}\",\"color\":15158332,\"fields\":[{\"name\":\"📦 Download\",\"value\":\"[GitHub Release](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)\"}]}]}"
