@@ -93,6 +93,16 @@ Für ARM64 (Raspberry Pi etc.):
 dotnet publish src/HaDeskLink -c Release -r linux-arm64 --self-contained -o publish
 ```
 
+## 📐 Versionierung
+Ab v2.2.1 gelten **plattformunabhängige Versionsnummern**:
+
+| Änderung | Beispiel | Erklärung |
+|---|---|---|
+| **Bug Fix** | 2.2.1 → 2.2.2 | Fehlerbehebung, nur betroffene Plattform |
+| **Neue Funktionen** | 2.2.x → 3.0.0 | Neue Features, alle Plattformen gleichzeitig |
+
+Jede Plattform (Windows, Linux, macOS) hat **eigene Versionsnummern**. Ein Bug-Fix unter Linux ändert nicht die Windows-Version – und umgekehrt. Große Funktionsupdates (Major) bekommen alle Plattformen gleichzeitig.
+
 ## Lizenz
 GPL v3 – Copyright © 2026 Fabian Kirchweger
 
@@ -101,7 +111,7 @@ This program is free software: you can redistribute it and/or modify it under th
 **Important:** If you modify or distribute this software, you MUST release your changes under the same GPL v3 license. Closed-source or proprietary use is NOT permitted. – Copyright © 2026 Fabian Kirchweger
 
 ## macOS-Version
-Aktuell gibt es keine macOS-Version von HA DeskLink. Mir fehlt leider die Mac-Hardware zum Testen. Wenn du einen Mac hast und mithelfen möchtest, siehe [Issue #1](https://github.com/TechFlipsi/ha-desklink-linux/issues/1).
+Es gibt jetzt eine macOS-Version von HA DeskLink! 🎉 Siehe [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ Community Test Version, nicht vom Entwickler getestet.
 
 ## Community
 💬 [Discord](https://discord.gg/HnCZY54U7) – Fragen, Feedback, Hilfe
