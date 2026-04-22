@@ -126,17 +126,41 @@ public class HaWebSocketClient : IDisposable
                 List<NotificationAction>? actions = null;
                 string? commandOnAction = null;
 
+                // Check nested data first (HA format: data.data.command)
+                // Then fall back to flat data (data.command)
+                if (data.TryGetProperty("data", out var innerData))
+                {
+                    if (innerData.TryGetProperty("command", out var cmd2))
+                        command ??= cmd2.GetString();
+                    if (innerData.TryGetProperty("command_on_action", out var coa2))
+                        commandOnAction ??= coa2.GetString();
+                    if (innerData.TryGetProperty("title", out var t2))
+                        title = t2.GetString() ?? title;
+                    if (innerData.TryGetProperty("message", out var msg2))
+                        text = msg2.GetString() ?? text;
+                    if (innerData.TryGetProperty("actions", out var actionsArr2))
+                    {
+                        actions ??= new List<NotificationAction>();
+                        foreach (var a in actionsArr2.EnumerateArray())
+                        {
+                            var act = a.GetProperty("action").GetString() ?? "";
+                            var actTitle = a.TryGetProperty("title", out var at) ? at.GetString() ?? act : act;
+                            var actCommand = a.TryGetProperty("command", out var ac) ? ac.GetString() : null;
+                            actions.Add(new NotificationAction(act, actTitle, actCommand));
+                        }
+                    }
+                }
                 if (data.TryGetProperty("title", out var t))
                     title = t.GetString() ?? "";
                 if (data.TryGetProperty("message", out var msg))
                     text = msg.GetString() ?? "";
                 if (data.TryGetProperty("command", out var cmd))
-                    command = cmd.GetString();
+                    command ??= cmd.GetString();
                 if (data.TryGetProperty("command_on_action", out var coa))
-                    commandOnAction = coa.GetString();
+                    commandOnAction ??= coa.GetString();
                 if (data.TryGetProperty("actions", out var actionsArr))
                 {
-                    actions = new List<NotificationAction>();
+                    actions ??= new List<NotificationAction>();
                     foreach (var a in actionsArr.EnumerateArray())
                     {
                         var act = a.GetProperty("action").GetString() ?? "";
