@@ -1,4 +1,4 @@
-# HA DeskLink Linux v2.2
+# HA DeskLink Linux v3.0
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -18,6 +18,10 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 - 🖥️ **PC-Befehle aus HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Lautstärke
 - 🖥️ **Grafische Oberfläche** – Avalonia UI Dashboard mit Status, Sensoren & Einrichtung
 - 📬 **Push-Benachrichtigungen** – WebSocket-basiert, wie die Handy-App
+- 🔔 **Actionable Notifications** – Benachrichtigungen mit Aktions-Buttons
+- ⚡ **Quick Actions** – Dashboard-Button für HA-Entity-Toggles
+- 📸 **Screenshot** – Bildschirmfoto speichern + als HA-Event hochladen
+- 📷 **Webcam-Sensor** – Zeigt ob Webcam aktiv ist (on/off)
 - 🔌 **mobile_app Protokoll** – identisch zur Windows-App, keine Extra-Konfiguration in HA nötig
 - 🔄 **Auto-Update** – Alle 2 Stunden wird nach Updates gesucht
 - 🐧 **Headless Daemon** – läuft als systemd-Service im Hintergrund
@@ -65,6 +69,8 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | Lautstärke leiser | `volume_down` | Verringert die Lautstärke um 10% |
 | Monitor an | `monitor_on` | Schaltet den Monitor an |
 | Monitor aus | `monitor_off` | Schaltet den Monitor aus |
+| Bildschirmfoto | `screenshot` | Macht einen Screenshot und lädt ihn zu HA hoch |
+| Bildschirmfoto speichern | `screenshot_save` | Speichert Screenshot lokal und lädt zu HA hoch |
 
 ## Sensoren in Home Assistant
 
@@ -86,6 +92,7 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | `sensor.ha_desklink_process_count` | Anzahl laufende Prozesse |
 | `sensor.ha_desklink_wifi_ssid` | Verbundenes WiFi-Netzwerk |
 | `sensor.ha_desklink_fan_*` | Lüfter-Drehzahlen in RPM |
+| `sensor.ha_desklink_webcam_active` | Webcam aktiv (on/off) |
 
 > 💡 Weitere Laufwerke werden automatisch erkannt. hwmon-Sensoren (GPU-Temp etc.) erscheinen automatisch wenn verfügbar.
 
