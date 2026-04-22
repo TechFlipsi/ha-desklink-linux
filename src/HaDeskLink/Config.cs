@@ -172,7 +172,9 @@ public class Config
         }
         else if (!string.IsNullOrEmpty(config.HaTokenEncrypted))
         {
-            config.HaToken = DecryptString(config.HaTokenEncrypted);
+            var decrypted = DecryptString(config.HaTokenEncrypted);
+            if (!string.IsNullOrEmpty(decrypted))
+                config.HaToken = decrypted;
         }
 
         return config;

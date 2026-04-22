@@ -82,6 +82,13 @@ public class DeskLinkApp : BackgroundService
 
         // Start WebSocket for push notifications
         var webhookId = _api.GetWebhookId();
+
+        if (string.IsNullOrEmpty(_config.HaToken))
+        {
+            Console.WriteLine("[HA DeskLink] FEHLER: Token konnte nicht geladen werden. Bitte App neu einrichten.");
+            return;
+        }
+
         _wsClient = new HaWebSocketClient(_config.HaUrl, _config.HaToken, webhookId,
             msg => Console.WriteLine($"[HA DeskLink] Notification: {msg}"));
         _ = _wsClient.ConnectAsync();
