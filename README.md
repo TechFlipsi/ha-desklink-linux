@@ -26,6 +26,9 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 - ⚡ **Quick Actions** – Dashboard-Button für HA-Entity-Toggles
 - 📸 **Screenshot** – Bildschirmfoto speichern + als HA-Event hochladen
 - 📷 **Webcam-Sensor** – Zeigt ob Webcam aktiv ist (on/off)
+- 🔔 **Actionable Notifications** – Benachrichtigungen mit Aktions-Buttons
+- 📸 **Screenshot** – Bildschirmfoto speichern + als HA-Event hochladen
+- 🔋 **Helligkeits-Befehle** – brightness_up/down/:N (Laptops)
 - 🔌 **mobile_app Protokoll** – identisch zur Windows-App, keine Extra-Konfiguration in HA nötig
 - 🔄 **Auto-Update** – Alle 2 Stunden wird nach Updates gesucht
 - 🐧 **Headless Daemon** – läuft als systemd-Service im Hintergrund
@@ -99,6 +102,7 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | `sensor.ha_desklink_process_count` | Anzahl laufende Prozesse |
 | `sensor.ha_desklink_wifi_ssid` | Verbundenes WiFi-Netzwerk |
 | `sensor.ha_desklink_fan_*` | Lüfter-Drehzahlen in RPM |
+| `sensor.ha_desklink_version` | Aktuelle HA DeskLink Version |
 | `sensor.ha_desklink_webcam_active` | Webcam aktiv (on/off) |
 | `sensor.ha_desklink_fullscreen` | Vollbild-Modus (on/off) |
 | `sensor.ha_desklink_brightness` | Bildschirmhelligkeit in % |

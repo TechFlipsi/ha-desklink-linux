@@ -2,40 +2,43 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="HaDeskLink.Views.MainWindow"
         Title="HA DeskLink Linux"
-        Width="500" Height="420"
+        Width="560" Height="520"
         WindowStartupLocation="CenterScreen"
-        MinWidth="400" MinHeight="350">
+        MinWidth="450" MinHeight="400">
 
-    <DockPanel Margin="16">
+    <DockPanel Margin="20">
         <!-- Title -->
-        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
-            <TextBlock Text="🏠 HA DeskLink Linux" FontSize="20" FontWeight="Bold" />
-            <TextBlock Name="LblVersion" Text="v2.1.1" FontSize="12" Foreground="Gray" />
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,16">
+            <TextBlock Text="🏠 HA DeskLink Linux" FontSize="22" FontWeight="Bold" />
+            <TextBlock Name="LblVersion" Text="v3.0.6" FontSize="12" Foreground="Gray" />
         </StackPanel>
 
         <!-- Status -->
-        <Border DockPanel.Dock="Top" Background="#1E1E1E" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+        <Border DockPanel.Dock="Top" Background="#1E1E1E" CornerRadius="8" Padding="14" Margin="0,0,0,14">
             <StackPanel Spacing="6">
-                <TextBlock Text="Status" FontWeight="SemiBold" />
-                <TextBlock Name="LblStatus" Text="✓ Verbunden" Foreground="#4CAF50" />
+                <TextBlock Text="📊 Status" FontWeight="SemiBold" FontSize="14" />
+                <TextBlock Name="LblStatus" Text="✓ Verbunden" Foreground="#4CAF50" FontSize="13" />
                 <TextBlock Name="LblSensors" Text="Sensoren: 0 registriert" Foreground="Gray" FontSize="12" />
             </StackPanel>
         </Border>
 
         <!-- Dashboard link -->
-        <Border DockPanel.Dock="Top" Background="#2D2D2D" CornerRadius="8" Padding="12" Margin="0,0,0,12">
-            <StackPanel Spacing="6">
-                <TextBlock Text="Home Assistant Dashboard" FontWeight="SemiBold" />
-                <Button Name="BtnDashboard" Content="🌐 Dashboard öffnen" HorizontalAlignment="Stretch" />
+        <Border DockPanel.Dock="Top" Background="#2D2D2D" CornerRadius="8" Padding="14" Margin="0,0,0,14">
+            <StackPanel Spacing="8">
+                <TextBlock Text="🌐 Home Assistant Dashboard" FontWeight="SemiBold" FontSize="14" />
+                <Button Name="BtnDashboard" Content="Dashboard öffnen" HorizontalAlignment="Stretch" />
             </StackPanel>
         </Border>
 
         <!-- Actions -->
-        <StackPanel DockPanel.Dock="Top" Spacing="8" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
-            <Button Name="BtnRefresh" Content="🔄 Sensoren aktualisieren" />
-            <Button Name="BtnQuickActions" Content="⚡ Quick Actions" />
-            <Button Name="BtnSetup" Content="⚙️ Einrichtung" />
-            <Button Name="BtnResetDevice" Content="🔑 Neue Geräte-ID" />
+        <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,14">
+            <TextBlock Text="⚡ Aktionen" FontWeight="SemiBold" FontSize="14" />
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                <Button Name="BtnRefresh" Content="🔄 Sensoren aktualisieren" />
+                <Button Name="BtnQuickActions" Content="⚡ Quick Actions" />
+                <Button Name="BtnSetup" Content="⚙️ Einrichtung" />
+                <Button Name="BtnResetDevice" Content="🔑 Neue Geräte-ID" />
+            </StackPanel>
         </StackPanel>
 
         <!-- Links -->
@@ -45,7 +48,7 @@
         </StackPanel>
 
         <!-- Info -->
-        <TextBlock DockPanel.Dock="Bottom" Text="HA DeskLink läuft als Hintergrund-Dienst (systemd)" 
+        <TextBlock DockPanel.Dock="Bottom" Text="HA DeskLink läuft als Hintergrund-Dienst (systemd)"
                    Foreground="Gray" FontSize="11" HorizontalAlignment="Center" Margin="0,8,0,0" />
     </DockPanel>
 </Window>

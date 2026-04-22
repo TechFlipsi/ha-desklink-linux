@@ -1,4 +1,4 @@
-# HA DeskLink Linux v2.2
+# HA DeskLink Linux v3.0
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -10,15 +10,22 @@
 
 **Linux Companion App for Home Assistant** – headless, native, reliable.
 
-Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware sensors.
+📖 **[Manual](MANUAL.md)** – Installation, Sensors, Commands, Quick Actions, Actionable Notifications, Screenshot, Webcam & more (DE + EN)
 
+📊 **[HASS.Agent vs. HA DeskLink](COMPARISON.md)** – Feature comparison (DE + EN)
+
+Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware sensors.
 
 ## Features
 - 🌡️ **CPU & GPU Temperature** – via `/sys/class/thermal` and `hwmon`
 - 📊 **All Sensors** – CPU, RAM, all drives, Battery, Uptime, Network
-- 🖥️ **PC Commands from HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Volume
+- 🖥️ **PC Commands from HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Volume, Brightness
 - 🖥️ **Graphical Interface** – Avalonia UI dashboard with status, sensors & setup
 - 📬 **Push Notifications** – WebSocket-based, like the mobile app
+- 🔔 **Actionable Notifications** – Notifications with action buttons
+- ⚡ **Quick Actions** – Dashboard button for HA entity toggles
+- 📸 **Screenshot** – Screenshot save + upload as HA event
+- 📷 **Webcam Sensor** – Shows if webcam is active (on/off)
 - 🔌 **mobile_app Protocol** – identical to the Windows app, no extra HA configuration needed
 - 🔄 **Auto-Update** – checks for updates every 2 hours
 - 🐧 **Headless Daemon** – runs as systemd service in the background
@@ -66,8 +73,15 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 | Mute | `mute` | Mutes the audio |
 | Volume Up | `volume_up` | Increases volume by 10% |
 | Volume Down | `volume_down` | Decreases volume by 10% |
+| Brightness Up | `brightness_up` | Increases brightness by 10% (⚠️ laptops only) |
+| Brightness Down | `brightness_down` | Decreases brightness by 10% (⚠️ laptops only) |
+| Brightness Set | `brightness:50` | Sets brightness to value 0-100 (⚠️ laptops only) |
 | Monitor On | `monitor_on` | Turns the monitor on |
 | Monitor Off | `monitor_off` | Turns the monitor off |
+| Screenshot | `screenshot` | Takes a screenshot and uploads to HA |
+| Screenshot Save | `screenshot_save` | Saves screenshot locally + uploads to HA |
+
+> ⚠️ **Brightness commands** (`brightness_up`, `brightness_down`, `brightness:XX`) generally only work on **laptops** with built-in displays. Desktop PCs with external monitors will ignore the commands.
 
 ## Sensors in Home Assistant
 
@@ -85,10 +99,14 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 | `sensor.ha_desklink_uptime` | Uptime in hours |
 | `sensor.ha_desklink_battery` | Battery level in % (laptops) |
 | `sensor.ha_desklink_ip_address` | Current IPv4 address |
+| `sensor.ha_desklink_wifi_ssid` | Connected WiFi network |
 | `binary_sensor.ha_desklink_connectivity` | Online/Offline status |
 | `sensor.ha_desklink_process_count` | Number of running processes |
-| `sensor.ha_desklink_wifi_ssid` | Connected WiFi network |
 | `sensor.ha_desklink_fan_*` | Fan speeds in RPM |
+| `sensor.ha_desklink_webcam_active` | Webcam active (on/off) |
+| `sensor.ha_desklink_fullscreen` | Fullscreen mode (on/off) |
+| `sensor.ha_desklink_brightness` | Screen brightness in % |
+| `sensor.ha_desklink_version` | Current HA DeskLink version |
 
 > 💡 Additional drives are detected automatically. hwmon sensors (GPU temp etc.) appear automatically if available.
 
@@ -97,7 +115,7 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 dotnet publish src/HaDeskLink -c Release -r linux-x64 --self-contained -o publish
 ```
 
-For ARM64 (Raspberry Pi etc.):
+For ARM64:
 ```bash
 dotnet publish src/HaDeskLink -c Release -r linux-arm64 --self-contained -o publish
 ```
@@ -117,13 +135,16 @@ GPL v3 – Copyright © 2026 Fabian Kirchweger
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License v3.
 
-**Important:** If you modify or distribute this software, you MUST release your changes under the same GPL v3 license. Closed-source or proprietary use is NOT permitted. – Copyright © 2026 Fabian Kirchweger
+**Important:** If you modify or distribute this software, you MUST release your changes under the same GPL v3 license. Closed-source or proprietary use is NOT permitted.
+
+## Windows Version
+See [ha-desklink-dotnet](https://github.com/TechFlipsi/ha-desklink-dotnet) for the Windows version.
 
 ## macOS Version
-There is now a macOS version of HA DeskLink! 🎉 See [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ Community Test Version, not tested by the developer.
+See [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ Community Test Version.
 
 ## Community
 💬 [Discord](https://discord.gg/HnCZY54U7) – Questions, Feedback, Help
 
 ## Attribution
-This project was created with AI assistance. All code was written and developed by **GLM-5.1** (via OpenClaw) – from architecture to implementation to debugging. This English documentation was also translated from German by AI. The German documentation is the original version.
+This project was created with AI assistance. All code was written and developed by **GLM-5.1** (via OpenClaw) – from architecture to implementation to debugging. The English documentation was translated from German by AI. The German documentation is the original version.

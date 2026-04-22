@@ -1,5 +1,11 @@
 # Changelog
 
+## [v3.0.7] - 2026-04-22
+- 📖 **Doku aktualisiert:** README, README_EN, MANUAL, COMPARISON auf v3.0-Stand
+- 🎨 **Dashboard modernisiert:** Bessere Übersicht, Sektions-Header
+- 📷 **Webcam-Sensor** in Doku korrekt dokumentiert
+- 📸 **Screenshot & Actionable Notifications** in Doku ergänzt
+- 🔋 **Helligkeits-Befehle** in Doku ergänzt
 
 ## [v3.0.6] - 2026-04-22
 - 🐛 **Bug Fix:** Notification-Parsing – unterstützt jetzt verschachteltes data.data.command Format (HA mobile_app)
