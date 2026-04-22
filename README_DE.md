@@ -96,6 +96,10 @@ dotnet publish src/HaDeskLink -c Release -r linux-arm64 --self-contained -o publ
 ## Lizenz
 GPL v3 – Copyright © 2026 Fabian Kirchweger
 
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License v3.
+
+**Important:** If you modify or distribute this software, you MUST release your changes under the same GPL v3 license. Closed-source or proprietary use is NOT permitted. – Copyright © 2026 Fabian Kirchweger
+
 ## macOS-Version
 Aktuell gibt es keine macOS-Version von HA DeskLink. Mir fehlt leider die Mac-Hardware zum Testen. Wenn du einen Mac hast und mithelfen möchtest, siehe [Issue #1](https://github.com/TechFlipsi/ha-desklink-linux/issues/1).
 
