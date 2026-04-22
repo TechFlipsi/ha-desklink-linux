@@ -1,34 +1,32 @@
 # HA DeskLink Linux v2.2
 
-⚠️ **PRE-RELEASE / BETA** – This version has not been tested on a real Linux system yet. Use at your own risk!
+⚠️ **PRE-RELEASE / BETA** – Diese Version wurde noch nicht auf einem echten Linux-System getestet. Verwendung auf eigene Gefahr. Feedback und Bug-Reports sind willkommen!
 
-**Linux Companion App for Home Assistant** – headless, native, reliable.
+**Linux Companion App für Home Assistant** – headless, nativ, zuverlässig.
 
-Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware sensors.
-
-> 🇩🇪 [Deutsche Version (Original)](README_DE.md)
+Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardware-Sensoren.
 
 ## Features
-- 🌡️ **CPU & GPU Temperature** – via `/sys/class/thermal` and `hwmon`
-- 📊 **All Sensors** – CPU, RAM, all drives, Battery, Uptime, Network
-- 🖥️ **PC Commands from HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Volume
-- 🖥️ **Graphical Interface** – Avalonia UI dashboard with status, sensors & setup
-- 📬 **Push Notifications** – WebSocket-based, like the mobile app
-- 🔌 **mobile_app Protocol** – identical to the Windows app, no extra HA configuration needed
-- 🔄 **Auto-Update** – checks for updates every 2 hours
-- 🐧 **Headless Daemon** – runs as systemd service in the background
-- 🛡️ **Downgrade Protection** – only upgrades, no older versions
+- 🌡️ **CPU & GPU Temperatur** – via `/sys/class/thermal` und `hwmon`
+- 📊 **Alle Sensoren** – CPU, RAM, alle Laufwerke, Akku, Uptime, Netzwerk
+- 🖥️ **PC-Befehle aus HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Lautstärke
+- 🖥️ **Grafische Oberfläche** – Avalonia UI Dashboard mit Status, Sensoren & Einrichtung
+- 📬 **Push-Benachrichtigungen** – WebSocket-basiert, wie die Handy-App
+- 🔌 **mobile_app Protokoll** – identisch zur Windows-App, keine Extra-Konfiguration in HA nötig
+- 🔄 **Auto-Update** – Alle 2 Stunden wird nach Updates gesucht
+- 🐧 **Headless Daemon** – läuft als systemd-Service im Hintergrund
+- 🛡️ **Downgrade-Schutz** – nur Upgrades, keine älteren Versionen
 
-## System Requirements
+## Systemanforderungen
 - Linux (x64, ARM64)
-- .NET 8 Runtime (or self-contained build)
-- For sensors: `lm-sensors` recommended (`sudo apt install lm-sensors`)
+- .NET 8 Runtime (oder self-contained build)
+- Für Sensoren: `lm-sensors` empfohlen (`sudo apt install lm-sensors`)
 
 ## Installation
-1. Download the latest `ha-desklink-linux-x64.tar.gz` from [Releases](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
-2. Extract: `tar xzf ha-desklink-linux-x64.tar.gz`
-3. Run setup: `./ha-desklink --setup`
-4. Install as service:
+1. Neueste `ha-desklink-linux-x64.tar.gz` von [Releases](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest) herunterladen
+2. Entpacken: `tar xzf ha-desklink-linux-x64.tar.gz`
+3. Setup ausführen: `./ha-desklink --setup`
+4. Als Service installieren:
    ```bash
    sudo cp ha-desklink /usr/local/bin/
    sudo cp ha-desklink.service /etc/systemd/system/
@@ -36,79 +34,77 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
    sudo systemctl enable --now ha-desklink
    ```
 
-**For ARM64 (Raspberry Pi etc.):** Use `ha-desklink-linux-arm64.tar.gz`.
-
-## CLI Commands
-| Command | Description |
+## CLI-Befehle
+| Befehl | Beschreibung |
 |---|---|
-| `ha-desklink` | Start with graphical interface |
-| `ha-desklink --daemon` | Start as background daemon (no GUI) |
-| `ha-desklink --setup` | Setup (enter HA URL + token) |
-| `ha-desklink --reset-device` | Generate new device ID |
-| `ha-desklink --update` | Check for updates |
-| `ha-desklink --version` | Show version |
-| `ha-desklink --help` | Show help |
+| `ha-desklink` | Mit grafischer Oberfläche starten |
+| `ha-desklink --daemon` | Als Hintergrund-Daemon starten (ohne GUI) |
+| `ha-desklink --setup` | Einrichtung (HA URL + Token) |
+| `ha-desklink --reset-device` | Neue Geräte-ID erstellen |
+| `ha-desklink --update` | Nach Update suchen |
+| `ha-desklink --version` | Version anzeigen |
+| `ha-desklink --help` | Hilfe anzeigen |
 
-## PC Commands from Home Assistant
+## PC-Befehle aus Home Assistant
 
-| Command | Value | Effect |
+| Befehl | Schreibweise | Wirkung |
 |---|---|---|
-| Shutdown | `shutdown` | Shuts down the PC |
-| Restart | `restart` | Restarts the PC |
-| Hibernate | `hibernate` | Puts the PC into hibernation |
-| Suspend | `suspend` | Puts the PC into sleep mode |
-| Lock PC | `lock` | Locks the screen |
-| Mute | `mute` | Mutes the audio |
-| Volume Up | `volume_up` | Increases volume by 10% |
-| Volume Down | `volume_down` | Decreases volume by 10% |
-| Monitor On | `monitor_on` | Turns the monitor on |
-| Monitor Off | `monitor_off` | Turns the monitor off |
+| Herunterfahren | `shutdown` | Fährt den PC herunter |
+| Neustarten | `restart` | Startet den PC neu |
+| Ruhezustand | `hibernate` | Versetzt in den Ruhezustand |
+| Bereitschaft | `suspend` | Versetzt in den Bereitschaftsmodus |
+| PC sperren | `lock` | Sperrt den Bildschirm |
+| Lautstärke stumm | `mute` | Schaltet den Ton stumm |
+| Lautstärke lauter | `volume_up` | Erhöht die Lautstärke um 10% |
+| Lautstärke leiser | `volume_down` | Verringert die Lautstärke um 10% |
+| Monitor an | `monitor_on` | Schaltet den Monitor an |
+| Monitor aus | `monitor_off` | Schaltet den Monitor aus |
 
-## Sensors in Home Assistant
+## Sensoren in Home Assistant
 
-| Sensor | Description |
+| Sensor | Beschreibung |
 |---|---|
-| `sensor.ha_desklink_cpu_usage` | CPU usage in % |
-| `sensor.ha_desklink_cpu_temperature` | CPU temperature in °C |
-| `sensor.ha_desklink_cpu_clock` | CPU clock speed in MHz |
-| `sensor.ha_desklink_memory_usage` | RAM usage in % |
-| `sensor.ha_desklink_memory_used` | RAM used in GB |
-| `sensor.ha_desklink_memory_free` | RAM free in GB |
-| `sensor.ha_desklink_memory_total` | RAM total in GB |
-| `sensor.ha_desklink_disk_*_usage` | Drive usage in % |
-| `sensor.ha_desklink_disk_*_free` | Drive free in GB |
-| `sensor.ha_desklink_uptime` | Uptime in hours |
-| `sensor.ha_desklink_battery` | Battery level in % (laptops) |
-| `sensor.ha_desklink_ip_address` | Current IPv4 address |
-| `binary_sensor.ha_desklink_connectivity` | Online/Offline status |
-| `sensor.ha_desklink_process_count` | Number of running processes |
-| `sensor.ha_desklink_wifi_ssid` | Connected WiFi network |
-| `sensor.ha_desklink_fan_*` | Fan speeds in RPM |
+| `sensor.ha_desklink_cpu_usage` | CPU-Auslastung in % |
+| `sensor.ha_desklink_cpu_temperature` | CPU-Temperatur in °C |
+| `sensor.ha_desklink_cpu_clock` | CPU-Taktrate in MHz |
+| `sensor.ha_desklink_memory_usage` | RAM-Auslastung in % |
+| `sensor.ha_desklink_memory_used` | RAM verwendet in GB |
+| `sensor.ha_desklink_memory_free` | RAM frei in GB |
+| `sensor.ha_desklink_memory_total` | RAM gesamt in GB |
+| `sensor.ha_desklink_disk_*_usage` | Laufwerk-Auslastung in % |
+| `sensor.ha_desklink_disk_*_free` | Laufwerk frei in GB |
+| `sensor.ha_desklink_uptime` | Laufzeit in Stunden |
+| `sensor.ha_desklink_battery` | Akkustand in % (Laptops) |
+| `sensor.ha_desklink_ip_address` | Aktuelle IPv4-Adresse |
+| `binary_sensor.ha_desklink_connectivity` | Online/Offline-Status |
+| `sensor.ha_desklink_process_count` | Anzahl laufende Prozesse |
+| `sensor.ha_desklink_wifi_ssid` | Verbundenes WiFi-Netzwerk |
+| `sensor.ha_desklink_fan_*` | Lüfter-Drehzahlen in RPM |
 
-> 💡 Additional drives are detected automatically. hwmon sensors (GPU temp etc.) appear automatically if available.
+> 💡 Weitere Laufwerke werden automatisch erkannt. hwmon-Sensoren (GPU-Temp etc.) erscheinen automatisch wenn verfügbar.
 
 ## Build
 ```bash
 dotnet publish src/HaDeskLink -c Release -r linux-x64 --self-contained -o publish
 ```
 
-For ARM64 (Raspberry Pi etc.):
+Für ARM64 (Raspberry Pi etc.):
 ```bash
 dotnet publish src/HaDeskLink -c Release -r linux-arm64 --self-contained -o publish
 ```
 
-## License
+## Lizenz
 GPL v3 – Copyright © 2026 Fabian Kirchweger
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License v3.
 
 **Important:** If you modify or distribute this software, you MUST release your changes under the same GPL v3 license. Closed-source or proprietary use is NOT permitted. – Copyright © 2026 Fabian Kirchweger
 
-## macOS Version
-There is currently no macOS version of HA DeskLink. Unfortunately, I don't have Mac hardware for testing. If you have a Mac and would like to help, see [Issue #1](https://github.com/TechFlipsi/ha-desklink-linux/issues/1).
+## macOS-Version
+Aktuell gibt es keine macOS-Version von HA DeskLink. Mir fehlt leider die Mac-Hardware zum Testen. Wenn du einen Mac hast und mithelfen möchtest, siehe [Issue #1](https://github.com/TechFlipsi/ha-desklink-linux/issues/1).
 
 ## Community
-💬 [Discord](https://discord.gg/HnCZY54U7) – Questions, Feedback, Help
+💬 [Discord](https://discord.gg/HnCZY54U7) – Fragen, Feedback, Hilfe
 
-## Attribution
-This project was created with AI assistance. All code was written and developed by **GLM-5.1** (via OpenClaw) – from architecture to implementation to debugging. This English documentation was also translated from German by AI. The German documentation is the original version.
+## Erstellung
+Dieses Projekt wurde unter Verwendung von KI-Unterstützung erstellt. Der gesamte Code wurde von **GLM-5.1** (via OpenClaw) geschrieben und entwickelt – von der Architektur über die Implementierung bis zum Debugging. Die englische Dokumentation wurde ebenfalls von der KI aus dem Deutschen ins Englische übersetzt. Die deutsche Dokumentation ist die Originalversion.
