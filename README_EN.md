@@ -6,7 +6,6 @@
 
 Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware sensors.
 
-> 🇩🇪 [Deutsche Version (Original)](README_DE.md)
 
 ## Features
 - 🌡️ **CPU & GPU Temperature** – via `/sys/class/thermal` and `hwmon`
