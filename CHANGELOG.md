@@ -2,6 +2,13 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden hier dokumentiert.
 
+## [v2.2.0] - 2026-04-22
+- 🖥️ **Vollbild-Sensor** – zeigt welches Programm im Vollbild läuft (X11, `xdotool`/`xprop`)
+- 📺 **Monitor-Layout-Sensor** – aktives Monitor-Layout (`xrandr`)
+- ☀️ **Helligkeit steuern** – neue Befehle `brightness_up`/`brightness_down`/`brightness:50` via `brightnessctl` + Sensor
+- 🌍 **Mehrsprachigkeit** – Deutsch (Standard), Englisch, Spanisch, Französisch, Chinesisch, Japanisch
+- 🌍 Community kann eigene Sprachdateien hinzufügen
+
 ## [v2.1.1] - 2026-04-22
 - Avalonia UI Dashboard (Status, Sensoren, Setup, Discord-Link)
 - Lizenz auf GPL v3 geändert (Closed-Source-Nutzung nicht mehr erlaubt)

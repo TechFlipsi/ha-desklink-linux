@@ -1,4 +1,4 @@
-# HA DeskLink Linux
+# HA DeskLink Linux v2.2
 
 ⚠️ **PRE-RELEASE / BETA** – Diese Version wurde noch nicht auf einem echten Linux-System getestet. Verwendung auf eigene Gefahr. Feedback und Bug-Reports sind willkommen!
 
