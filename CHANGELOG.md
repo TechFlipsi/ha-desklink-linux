@@ -1,6 +1,10 @@
 # Changelog
 
 
+## [v3.0.5] - 2026-04-22
+- ✨ **Neu:** ha_desklink_version Sensor – zeigt aktuelle App-Version in HA
+- 🐛 **Bug Fix:** fullscreen_app Sensor entfernt (Duplikat von active_window/fullscreen)
+
 ## [v3.0.1] - 2026-04-22
 - 🐛 **Bug Fix:** Token-Entschlüsselung gibt leeren String zurück → keine HA-Verbindung mehr (verhindert IP-Sperre durch zu viele fehlgeschlagene Auth-Versuche)
 - 🐛 **Bug Fix:** WebhookServer-Crash durch disposed CancellationTokenSource (Windows)

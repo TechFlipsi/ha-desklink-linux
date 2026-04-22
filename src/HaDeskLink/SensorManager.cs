@@ -53,7 +53,7 @@ public class SensorManager
 
         // Fullscreen sensor
         var fullscreen = GetFullscreenInfo();
-        if (fullscreen != null) sensors.AddRange(fullscreen);
+        if (fullscreen != null) sensors.Add(fullscreen);
 
         // Monitor layout
         sensors.Add(GetMonitorLayout());
@@ -65,6 +65,9 @@ public class SensorManager
         // Webcam active sensor
         var webcam = GetWebcamActive();
         if (webcam != null) sensors.Add(webcam);
+
+        // App version
+        sensors.Add(GetAppVersion());
 
         return sensors;
     }
@@ -358,7 +361,7 @@ public class SensorManager
     }
 
     // === Fullscreen detection (X11 only) ===
-    private List<SensorData>? GetFullscreenInfo()
+    private SensorData? GetFullscreenInfo()
     {
         try
         {
@@ -375,13 +378,7 @@ public class SensorManager
             proc?.WaitForExit(2000);
 
             if (string.IsNullOrEmpty(windowId) || !long.TryParse(windowId, out _))
-            {
-                return new List<SensorData>
-                {
-                    new SensorData("fullscreen", "Fullscreen", "off", icon: "mdi:fullscreen", stateClass: "measurement"),
-                    new SensorData("fullscreen_app", "Fullscreen App", "none", icon: "mdi:application")
-                };
-            }
+                return new SensorData("fullscreen", "Fullscreen", "off", icon: "mdi:fullscreen", stateClass: "measurement");
 
             // Get window state
             var psi2 = new ProcessStartInfo("xprop", $"-id {windowId} _NET_WM_STATE")
@@ -396,36 +393,12 @@ public class SensorManager
 
             var isFullscreen = state.Contains("_NET_WM_STATE_FULLSCREEN");
 
-            // Get window name
-            string appName = "none";
-            if (isFullscreen)
-            {
-                var psi3 = new ProcessStartInfo("xdotool", $"getwindowname {windowId}")
-                {
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                using var proc3 = Process.Start(psi3);
-                appName = proc3?.StandardOutput.ReadToEnd().Trim() ?? "unknown";
-                proc3?.WaitForExit(2000);
-                if (string.IsNullOrEmpty(appName)) appName = "unknown";
-            }
-
-            return new List<SensorData>
-            {
-                new SensorData("fullscreen", "Fullscreen", isFullscreen ? "on" : "off", icon: "mdi:fullscreen", stateClass: "measurement"),
-                new SensorData("fullscreen_app", "Fullscreen App", appName, icon: "mdi:application")
-            };
+            return new SensorData("fullscreen", "Fullscreen", isFullscreen ? "on" : "off", icon: "mdi:fullscreen", stateClass: "measurement");
         }
         catch
         {
             // Wayland or xdotool not available
-            return new List<SensorData>
-            {
-                new SensorData("fullscreen", "Fullscreen", "unavailable", icon: "mdi:fullscreen"),
-                new SensorData("fullscreen_app", "Fullscreen App", "unavailable (X11 required)", icon: "mdi:application")
-            };
+            return new SensorData("fullscreen", "Fullscreen", "unavailable", icon: "mdi:fullscreen");
         }
     }
 
@@ -650,5 +623,12 @@ public class SensorManager
             return output;
         }
         catch { return ""; }
+    }
+
+    private static SensorData GetAppVersion()
+    {
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+        return new SensorData("ha_desklink_version", "HA DeskLink Version",
+            version, icon: "mdi:information-outline");
     }
 }

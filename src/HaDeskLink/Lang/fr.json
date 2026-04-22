@@ -60,5 +60,6 @@
   "settings_quickactions_hint": "Format: entity_id,name (per line)",
   "screenshot_saved": "Screenshot saved",
   "webcam_active": "Webcam Active",
-  "notification_action_executed": "Action executed"
+  "notification_action_executed": "Action executed",
+  "ha_desklink_version": "HA DeskLink Version"
 }
