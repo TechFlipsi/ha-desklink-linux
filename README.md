@@ -71,6 +71,9 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | Lautstärke stumm | `mute` | Schaltet den Ton stumm |
 | Lautstärke lauter | `volume_up` | Erhöht die Lautstärke um 10% |
 | Lautstärke leiser | `volume_down` | Verringert die Lautstärke um 10% |
+| Helligkeit rauf | `brightness_up` | Erhöht die Bildschirmhelligkeit um 10% |
+| Helligkeit runter | `brightness_down` | Verringert die Bildschirmhelligkeit um 10% |
+| Helligkeit setzen | `brightness:50` | Setzt Helligkeit auf bestimmten Wert (0-100) |
 | Monitor an | `monitor_on` | Schaltet den Monitor an |
 | Monitor aus | `monitor_off` | Schaltet den Monitor aus |
 | Bildschirmfoto | `screenshot` | Macht einen Screenshot und lädt ihn zu HA hoch |
@@ -97,6 +100,9 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | `sensor.ha_desklink_wifi_ssid` | Verbundenes WiFi-Netzwerk |
 | `sensor.ha_desklink_fan_*` | Lüfter-Drehzahlen in RPM |
 | `sensor.ha_desklink_webcam_active` | Webcam aktiv (on/off) |
+| `sensor.ha_desklink_fullscreen` | Vollbild-Modus (on/off) |
+| `sensor.ha_desklink_brightness` | Bildschirmhelligkeit in % |
+| `sensor.ha_desklink_version` | Aktuelle HA DeskLink Version |
 
 > 💡 Weitere Laufwerke werden automatisch erkannt. hwmon-Sensoren (GPU-Temp etc.) erscheinen automatisch wenn verfügbar.
 
