@@ -611,7 +611,7 @@ public class SensorManager
                     {
                         try
                         {
-                            var target = System.IO.File.ReadLink(fd);
+                            var target = ReadSymlink(fd);
                             if (target.StartsWith("/dev/video"))
                             {
                                 inUse = true;
@@ -629,5 +629,26 @@ public class SensorManager
                 inUse ? "on" : "off", icon: "mdi:webcam", stateClass: "measurement");
         }
         catch { return null; }
+    }
+
+    private static string ReadSymlink(string path)
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "readlink",
+                Arguments = System.Diagnostics.ProcessStartInfo.EscapeArgument(path),
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true
+            };
+            var proc = System.Diagnostics.Process.Start(psi);
+            if (proc == null) return "";
+            var output = proc.StandardOutput.ReadToEnd().Trim();
+            proc.WaitForExit(2000);
+            return output;
+        }
+        catch { return ""; }
     }
 }
