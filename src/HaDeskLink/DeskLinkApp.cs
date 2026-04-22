@@ -36,6 +36,7 @@ public class DeskLinkApp : BackgroundService
     {
         _config = config;
         _api = api;
+        Localization.LoadLanguage(config.Language);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

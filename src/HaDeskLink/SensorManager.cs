@@ -51,6 +51,17 @@ public class SensorManager
         var wifi = GetWifiSsid();
         if (wifi != null) sensors.Add(wifi);
 
+        // Fullscreen sensor
+        var fullscreen = GetFullscreenInfo();
+        if (fullscreen != null) sensors.AddRange(fullscreen);
+
+        // Monitor layout
+        sensors.Add(GetMonitorLayout());
+
+        // Brightness
+        var brightness = GetBrightness();
+        if (brightness != null) sensors.Add(brightness);
+
         return sensors;
     }
 
@@ -340,5 +351,236 @@ public class SensorManager
     {
         var match = Regex.Match(info, $@"{key}\s+(\d+)");
         return match.Success ? double.Parse(match.Groups[1].Value) : 0;
+    }
+
+    // === Fullscreen detection (X11 only) ===
+    private List<SensorData>? GetFullscreenInfo()
+    {
+        try
+        {
+            // xdotool + xprop to detect fullscreen window
+            var psi = new ProcessStartInfo("xdotool", "getactivewindow")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var windowId = proc?.StandardOutput.ReadToEnd().Trim();
+            proc?.WaitForExit(2000);
+
+            if (string.IsNullOrEmpty(windowId) || !long.TryParse(windowId, out _))
+            {
+                return new List<SensorData>
+                {
+                    new SensorData("fullscreen", "Fullscreen", "off", icon: "mdi:fullscreen", stateClass: "measurement"),
+                    new SensorData("fullscreen_app", "Fullscreen App", "none", icon: "mdi:application")
+                };
+            }
+
+            // Get window state
+            var psi2 = new ProcessStartInfo("xprop", $"-id {windowId} _NET_WM_STATE")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc2 = Process.Start(psi2);
+            var state = proc2?.StandardOutput.ReadToEnd().Trim() ?? "";
+            proc2?.WaitForExit(2000);
+
+            var isFullscreen = state.Contains("_NET_WM_STATE_FULLSCREEN");
+
+            // Get window name
+            string appName = "none";
+            if (isFullscreen)
+            {
+                var psi3 = new ProcessStartInfo("xdotool", $"getwindowname {windowId}")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var proc3 = Process.Start(psi3);
+                appName = proc3?.StandardOutput.ReadToEnd().Trim() ?? "unknown";
+                proc3?.WaitForExit(2000);
+                if (string.IsNullOrEmpty(appName)) appName = "unknown";
+            }
+
+            return new List<SensorData>
+            {
+                new SensorData("fullscreen", "Fullscreen", isFullscreen ? "on" : "off", icon: "mdi:fullscreen", stateClass: "measurement"),
+                new SensorData("fullscreen_app", "Fullscreen App", appName, icon: "mdi:application")
+            };
+        }
+        catch
+        {
+            // Wayland or xdotool not available
+            return new List<SensorData>
+            {
+                new SensorData("fullscreen", "Fullscreen", "unavailable", icon: "mdi:fullscreen"),
+                new SensorData("fullscreen_app", "Fullscreen App", "unavailable (X11 required)", icon: "mdi:application")
+            };
+        }
+    }
+
+    // === Monitor Layout ===
+    private static SensorData GetMonitorLayout()
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("xrandr", "--query")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit(3000);
+
+            // Count connected monitors
+            var count = 0;
+            foreach (var line in output.Split('\n'))
+            {
+                if (line.Contains(" connected"))
+                    count++;
+            }
+
+            var layout = count <= 1 ? "1" : string.Join("+", Enumerable.Range(1, count));
+            return new SensorData("monitor_layout", "Monitor Layout", layout, icon: "mdi:monitor-multiple");
+        }
+        catch
+        {
+            return new SensorData("monitor_layout", "Monitor Layout", "unknown", icon: "mdi:monitor-multiple");
+        }
+    }
+
+    // === Brightness ===
+    private static SensorData? GetBrightness()
+    {
+        try
+        {
+            // Try brightnessctl first
+            var psi = new ProcessStartInfo("brightnessctl", "info")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit(2000);
+
+            // Parse: "(XX%)" from brightnessctl output
+            var match = Regex.Match(output, @"\((\d+)%\)");
+            if (match.Success)
+            {
+                var pct = int.Parse(match.Groups[1].Value);
+                return new SensorData("brightness", "Brightness", pct, "%",
+                    deviceClass: "illuminance", icon: "mdi:brightness-6", stateClass: "measurement");
+            }
+        }
+        catch { }
+
+        // Fallback: try /sys/class/backlight
+        try
+        {
+            var backlightDir = "/sys/class/backlight";
+            if (Directory.Exists(backlightDir))
+            {
+                foreach (var dir in Directory.GetDirectories(backlightDir))
+                {
+                    var maxFile = Path.Combine(dir, "max_brightness");
+                    var curFile = Path.Combine(dir, "brightness");
+                    if (File.Exists(maxFile) && File.Exists(curFile))
+                    {
+                        var max = int.Parse(File.ReadAllText(maxFile).Trim());
+                        var cur = int.Parse(File.ReadAllText(curFile).Trim());
+                        var pct = max > 0 ? (int)Math.Round((double)cur / max * 100) : 0;
+                        return new SensorData("brightness", "Brightness", pct, "%",
+                            deviceClass: "illuminance", icon: "mdi:brightness-6", stateClass: "measurement");
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
+    // === Brightness control ===
+    public static void SetBrightness(int targetBrightness)
+    {
+        try
+        {
+            // Try brightnessctl
+            var psi = new ProcessStartInfo("brightnessctl", $"set {targetBrightness}%")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            proc?.WaitForExit(2000);
+            if (proc?.ExitCode == 0) return;
+        }
+        catch { }
+
+        // Fallback: xrandr
+        try
+        {
+            var level = Math.Clamp(targetBrightness / 100.0, 0.1, 1.0);
+            var psi = new ProcessStartInfo("xrandr", $"--output $(xrandr --query | grep ' connected' | head -1 | cut -d' ' -f1) --brightness {level:F2}")
+            {
+                UseShellExecute = true,
+                CreateNoWindow = true
+            };
+            Process.Start(psi)?.WaitForExit(2000);
+        }
+        catch { }
+    }
+
+    public static int? GetCurrentBrightness()
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("brightnessctl", "info")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit(2000);
+            var match = Regex.Match(output, @"\((\d+)%\)");
+            if (match.Success) return int.Parse(match.Groups[1].Value);
+        }
+        catch { }
+
+        // Fallback: /sys/class/backlight
+        try
+        {
+            var backlightDir = "/sys/class/backlight";
+            if (Directory.Exists(backlightDir))
+            {
+                foreach (var dir in Directory.GetDirectories(backlightDir))
+                {
+                    var maxFile = Path.Combine(dir, "max_brightness");
+                    var curFile = Path.Combine(dir, "brightness");
+                    if (File.Exists(maxFile) && File.Exists(curFile))
+                    {
+                        var max = int.Parse(File.ReadAllText(maxFile).Trim());
+                        var cur = int.Parse(File.ReadAllText(curFile).Trim());
+                        return max > 0 ? (int)Math.Round((double)cur / max * 100) : 0;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return null;
     }
 }
