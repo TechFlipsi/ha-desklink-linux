@@ -33,6 +33,7 @@
         <!-- Actions -->
         <StackPanel DockPanel.Dock="Top" Spacing="8" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,12">
             <Button Name="BtnRefresh" Content="🔄 Sensoren aktualisieren" />
+            <Button Name="BtnQuickActions" Content="⚡ Quick Actions" />
             <Button Name="BtnSetup" Content="⚙️ Einrichtung" />
             <Button Name="BtnResetDevice" Content="🔑 Neue Geräte-ID" />
         </StackPanel>

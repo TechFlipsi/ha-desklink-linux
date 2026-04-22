@@ -2,6 +2,13 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden hier dokumentiert.
 
+## [v3.0.0] - 2026-04-22
+- 🔔 **Actionable Notifications** – Benachrichtigungen mit Aktions-Buttons via notify-send. Daemon führt `command_on_action` automatisch aus, Dashboard zeigt verfügbare Aktionen.
+- ⚡ **Quick Actions** – Avalonia UI Popup mit HA-Entity-Toggle-Buttons. Button im Dashboard. Konfigurierbar in config.json (`QuickActions`-Feld).
+- 📸 **Screenshot-Befehl** – `screenshot`/`screenshot_save` speichert Bildschirmfoto (gnome-screenshot/scrot/grim) und sendet als HA-Event.
+- 📷 **Webcam-Sensor** – Neuer Sensor `webcam_active` (on/off) prüft `/dev/video*` ob eine Webcam in Benutzung ist.
+- 🌍 **Neue Lokalisierungs-Keys** für alle 6 Sprachen
+
 ## [v2.2.0] - 2026-04-22
 - 🖥️ **Vollbild-Sensor** – zeigt welches Programm im Vollbild läuft (X11, `xdotool`/`xprop`)
 - 📺 **Monitor-Layout-Sensor** – aktives Monitor-Layout (`xrandr`)

@@ -13,7 +13,9 @@
 #nullable enable
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace HaDeskLink;
 
@@ -59,7 +61,11 @@ public static class CommandHandler
                     Run("xset", "dpms force on");
                     break;
                 case "screenshot":
-                    // Not implemented on Linux headless
+                case "screenshot_save":
+                    TakeAndSaveScreenshot();
+                    break;
+                case "snipping_tool":
+                    // Not available on Linux
                     break;
                 case "brightness_up":
                     {
@@ -101,5 +107,92 @@ public static class CommandHandler
             UseShellExecute = false
         };
         Process.Start(psi)?.WaitForExit(5000);
+    }
+
+    private static void TakeAndSaveScreenshot()
+    {
+        try
+        {
+            var tempPath = Path.Combine(Path.GetTempPath(), "ha_desklink");
+            Directory.CreateDirectory(tempPath);
+            var filePath = Path.Combine(tempPath, $"screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+
+            // Try gnome-screenshot first, then scrot, then grim (Wayland)
+            var captured = false;
+
+            // gnome-screenshot
+            try
+            {
+                var psi = new ProcessStartInfo("gnome-screenshot", $"-f \"{filePath}\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                var proc = Process.Start(psi);
+                proc?.WaitForExit(5000);
+                if (proc?.ExitCode == 0 && File.Exists(filePath)) captured = true;
+            }
+            catch { }
+
+            // scrot (X11)
+            if (!captured)
+            {
+                try
+                {
+                    var psi = new ProcessStartInfo("scrot", $"\"{filePath}\"")
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    var proc = Process.Start(psi);
+                    proc?.WaitForExit(5000);
+                    if (proc?.ExitCode == 0 && File.Exists(filePath)) captured = true;
+                }
+                catch { }
+            }
+
+            // grim (Wayland)
+            if (!captured)
+            {
+                try
+                {
+                    var psi = new ProcessStartInfo("grim", filePath)
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    var proc = Process.Start(psi);
+                    proc?.WaitForExit(5000);
+                    if (proc?.ExitCode == 0 && File.Exists(filePath)) captured = true;
+                }
+                catch { }
+            }
+
+            if (captured)
+            {
+                Console.WriteLine($"[Screenshot] Saved: {filePath}");
+                // Upload to HA asynchronously
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        var config = Config.Load();
+                        var api = new HaApiClient(Config.GetConfigDir(), config.VerifySsl);
+                        api.LoadRegistration();
+                        await api.UploadScreenshotAsync(filePath);
+                        Console.WriteLine("[Screenshot] Uploaded to HA");
+                    }
+                    catch (Exception ex) { Console.WriteLine($"[Screenshot] Upload failed: {ex.Message}"); }
+                });
+            }
+            else
+            {
+                Console.WriteLine("[Screenshot] Failed: no screenshot tool available (install gnome-screenshot, scrot, or grim)");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Screenshot] Error: {ex.Message}");
+        }
     }
 }

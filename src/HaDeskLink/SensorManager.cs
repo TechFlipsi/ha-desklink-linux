@@ -62,6 +62,10 @@ public class SensorManager
         var brightness = GetBrightness();
         if (brightness != null) sensors.Add(brightness);
 
+        // Webcam active sensor
+        var webcam = GetWebcamActive();
+        if (webcam != null) sensors.Add(webcam);
+
         return sensors;
     }
 
@@ -582,5 +586,48 @@ public class SensorManager
         catch { }
 
         return null;
+    }
+
+    // === Webcam Active Sensor ===
+    private static SensorData? GetWebcamActive()
+    {
+        try
+        {
+            // Check /dev/video* devices - if any exist, webcam is present
+            // Check if any process has them open via /proc/*/fd/*
+            var videoDevices = Directory.GetFiles("/dev", "video*");
+            if (videoDevices.Length == 0) return null;
+
+            // Check if any process has a video device open
+            bool inUse = false;
+            try
+            {
+                foreach (var procDir in Directory.GetDirectories("/proc"))
+                {
+                    if (!int.TryParse(Path.GetFileName(procDir), out _)) continue;
+                    var fdDir = Path.Combine(procDir, "fd");
+                    if (!Directory.Exists(fdDir)) continue;
+                    foreach (var fd in Directory.GetFiles(fdDir))
+                    {
+                        try
+                        {
+                            var target = System.IO.File.ReadLink(fd);
+                            if (target.StartsWith("/dev/video"))
+                            {
+                                inUse = true;
+                                break;
+                            }
+                        }
+                        catch { }
+                    }
+                    if (inUse) break;
+                }
+            }
+            catch { }
+
+            return new SensorData("webcam_active", "Webcam Active",
+                inUse ? "on" : "off", icon: "mdi:webcam", stateClass: "measurement");
+        }
+        catch { return null; }
     }
 }

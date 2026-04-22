@@ -19,6 +19,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Diagnostics;
 
 namespace HaDeskLink;
 
@@ -118,18 +120,69 @@ public class HaWebSocketClient : IDisposable
             if (type == "event")
             {
                 var data = doc.RootElement.GetProperty("data");
-                if (data.TryGetProperty("message", out var msg))
-                {
-                    var title = data.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
-                    var text = msg.GetString() ?? "";
-                    _onNotification?.Invoke($"{title}\n{text}");
+                string title = "HA DeskLink";
+                string text = "";
+                string? command = null;
+                List<NotificationAction>? actions = null;
+                string? commandOnAction = null;
 
-                    // Handle commands
-                    if (data.TryGetProperty("command", out var cmd))
+                if (data.TryGetProperty("title", out var t))
+                    title = t.GetString() ?? "";
+                if (data.TryGetProperty("message", out var msg))
+                    text = msg.GetString() ?? "";
+                if (data.TryGetProperty("command", out var cmd))
+                    command = cmd.GetString();
+                if (data.TryGetProperty("command_on_action", out var coa))
+                    commandOnAction = coa.GetString();
+                if (data.TryGetProperty("actions", out var actionsArr))
+                {
+                    actions = new List<NotificationAction>();
+                    foreach (var a in actionsArr.EnumerateArray())
                     {
-                        CommandHandler.Execute(cmd.GetString() ?? "");
+                        var act = a.GetProperty("action").GetString() ?? "";
+                        var actTitle = a.TryGetProperty("title", out var at) ? at.GetString() ?? act : act;
+                        var actCommand = a.TryGetProperty("command", out var ac) ? ac.GetString() : null;
+                        actions.Add(new NotificationAction(act, actTitle, actCommand));
                     }
                 }
+
+                // Log notification
+                if (!string.IsNullOrEmpty(text))
+                    Console.WriteLine($"[Notification] {title}: {text}");
+
+                // Execute command if present (no action buttons)
+                if (!string.IsNullOrEmpty(command) && actions == null)
+                {
+                    CommandHandler.Execute(command);
+                }
+
+                // Handle actionable notifications - execute command_on_action for first action
+                // (Linux daemon has no UI for buttons - auto-execute default action)
+                if (actions != null && actions.Count > 0 && !string.IsNullOrEmpty(commandOnAction))
+                {
+                    Console.WriteLine($"[Action] Auto-executing: {commandOnAction}");
+                    CommandHandler.Execute(commandOnAction);
+                }
+
+                // Send desktop notification via notify-send if available
+                if (!string.IsNullOrEmpty(text))
+                {
+                    try
+                    {
+                        var actionHint = actions != null && actions.Count > 0
+                            ? $"\nAktionen: {string.Join(", ", actions.Select(a => a.Title))}"
+                            : "";
+                        var psi = new ProcessStartInfo("notify-send", $"\"{title}\" \"{text}{actionHint}\"")
+                        {
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        };
+                        Process.Start(psi)?.WaitForExit(3000);
+                    }
+                    catch { /* notify-send not available */ }
+                }
+
+                _onNotification?.Invoke($"{title}\n{text}");
             }
         }
         catch { }
@@ -139,5 +192,19 @@ public class HaWebSocketClient : IDisposable
     {
         _cts?.Cancel();
         _ws?.Dispose();
+    }
+}
+
+public class NotificationAction
+{
+    public string ActionKey { get; }
+    public string Title { get; }
+    public string? Command { get; }
+
+    public NotificationAction(string actionKey, string title, string? command = null)
+    {
+        ActionKey = actionKey;
+        Title = title;
+        Command = command;
     }
 }

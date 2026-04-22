@@ -37,6 +37,10 @@ public class Config
     public string UpdateChannel { get; set; } = "stable";
     public string Language { get; set; } = "de";
     /// <summary>
+    /// Quick Actions: JSON array of { entityId, name } objects.
+    /// </summary>
+    public string QuickActions { get; set; } = "[]";
+    /// <summary>
     /// Encrypted HA token. When set, HaToken is cleared.
     /// If empty, HaToken is used (migration from old config).
     /// </summary>
@@ -194,7 +198,8 @@ public class Config
             SensorInterval = SensorInterval,
             UpdateChannel = UpdateChannel,
             Language = Language,
-            HaTokenEncrypted = HaTokenEncrypted
+            HaTokenEncrypted = HaTokenEncrypted,
+            QuickActions = QuickActions
         };
 
         var json = JsonSerializer.Serialize(saveConfig, new JsonSerializerOptions { WriteIndented = true });
