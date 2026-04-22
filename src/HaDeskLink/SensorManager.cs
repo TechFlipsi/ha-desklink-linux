@@ -638,7 +638,7 @@ public class SensorManager
             var psi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "readlink",
-                Arguments = System.Diagnostics.ProcessStartInfo.EscapeArgument(path),
+                Arguments = path,
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true
