@@ -71,9 +71,9 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | Lautstärke stumm | `mute` | Schaltet den Ton stumm |
 | Lautstärke lauter | `volume_up` | Erhöht die Lautstärke um 10% |
 | Lautstärke leiser | `volume_down` | Verringert die Lautstärke um 10% |
-| Helligkeit rauf | `brightness_up` | Erhöht die Bildschirmhelligkeit um 10% |
-| Helligkeit runter | `brightness_down` | Verringert die Bildschirmhelligkeit um 10% |
-| Helligkeit setzen | `brightness:50` | Setzt Helligkeit auf bestimmten Wert (0-100) |
+| Helligkeit rauf | `brightness_up` | Erhöht die Bildschirmhelligkeit um 10% (⚠️ nur Laptops/int. Monitore) |
+| Helligkeit runter | `brightness_down` | Verringert die Bildschirmhelligkeit um 10% (⚠️ nur Laptops/int. Monitore) |
+| Helligkeit setzen | `brightness:50` | Setzt Helligkeit auf bestimmten Wert (0-100, ⚠️ nur Laptops/int. Monitore) |
 | Monitor an | `monitor_on` | Schaltet den Monitor an |
 | Monitor aus | `monitor_off` | Schaltet den Monitor aus |
 | Bildschirmfoto | `screenshot` | Macht einen Screenshot und lädt ihn zu HA hoch |
