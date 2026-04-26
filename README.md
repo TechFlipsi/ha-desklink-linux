@@ -10,6 +10,10 @@
 
 **Linux Companion App für Home Assistant** – headless, nativ, zuverlässig.
 
+> 🔍 **Suchst du einen Home Assistant Desktop-Companion für Linux?** HA DeskLink verbindet deinen Linux-PC direkt mit Home Assistant – Sensordaten, Systemstatus und Steuerelemente live. Kein Browser nötig.
+
+<!-- SEO: home assistant linux desktop app, home assistant linux companion, hass linux, home assistant sensor monitor linux, smart home linux widget -->
+
 📖 **[Betriebsanleitung / Manual](MANUAL.md)** – Installation, Sensoren, Befehle, Quick Actions, Actionable Notifications, Screenshot, Webcam, Plattform-Vergleich & mehr (DE + EN)
 
 📊 **[HASS.Agent vs. HA DeskLink](COMPARISON.md)** – Features, Architektur & Migration im Vergleich (DE + EN)
