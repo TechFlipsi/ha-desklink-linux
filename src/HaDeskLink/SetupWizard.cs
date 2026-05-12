@@ -38,20 +38,53 @@ public class SetupWizard
         var ssl = Console.ReadLine()?.Trim().ToLowerInvariant();
         VerifySsl = ssl == "j" || ssl == "y" || ssl == "ja" || ssl == "yes";
 
-        Console.WriteLine("\nVerbinde mit Home Assistant...");
+        var configDir = Config.GetConfigDir();
+        var api = new HaApiClient(configDir, VerifySsl);
 
-        try
+        while (true)
         {
-            var configDir = Config.GetConfigDir();
-            var api = new HaApiClient(configDir, VerifySsl);
-            await api.RegisterAsync(HaUrl, HaToken);
-            Console.WriteLine("✓ Verbindung erfolgreich!");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ Verbindung fehlgeschlagen: {ex.Message}");
-            return false;
+            Console.WriteLine("\nVerbinde mit Home Assistant...");
+
+            try
+            {
+                await api.RegisterAsync(HaUrl, HaToken);
+                Console.WriteLine("✓ Verbindung erfolgreich!");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (ex is InvalidOperationException && ex.Message.Contains("Login fehlgeschlagen"))
+                {
+                    Console.WriteLine($"✗ {ex.Message}");
+                    Console.Write("\nMöchtest du es erneut versuchen? (j/n): ");
+                    var retry = Console.ReadLine()?.Trim().ToLowerInvariant();
+                    if (retry == "j" || retry == "y" || retry == "ja" || retry == "yes")
+                    {
+                        api.ResetBlockState();
+                        Console.Write("Neuer Long-Lived Access Token: ");
+                        HaToken = Console.ReadLine()?.Trim() ?? "";
+                        continue;
+                    }
+                    return false;
+                }
+
+                Console.WriteLine($"✗ Verbindung fehlgeschlagen (Versuch {api.FailedLoginAttempts}/{HaApiClient.MaxFailedLoginAttempts}): {ex.Message}");
+
+                if (api.IsBlocked)
+                {
+                    Console.WriteLine("\n✗ Login gesperrt nach 3 Fehlversuchen. Token ungültig.");
+                    Console.Write("Möchtest du es erneut versuchen? (j/n): ");
+                    var retry = Console.ReadLine()?.Trim().ToLowerInvariant();
+                    if (retry == "j" || retry == "y" || retry == "ja" || retry == "yes")
+                    {
+                        api.ResetBlockState();
+                        Console.Write("Neuer Long-Lived Access Token: ");
+                        HaToken = Console.ReadLine()?.Trim() ?? "";
+                        continue;
+                    }
+                    return false;
+                }
+            }
         }
     }
 }

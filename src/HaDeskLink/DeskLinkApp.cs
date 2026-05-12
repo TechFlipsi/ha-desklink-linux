@@ -63,6 +63,19 @@ public class DeskLinkApp : BackgroundService
         {
             try
             {
+                // Check if the API client is blocked before trying
+                if (_api.IsBlocked)
+                {
+                    Console.WriteLine("[HA DeskLink] Login gesperrt: Token ungültig. Bitte überprüfe deinen Home Assistant Token in den Einstellungen.");
+                    Console.WriteLine("[HA DeskLink] Daemon bleibt inaktiv bis zur manuellen Korrektur des Tokens.");
+                    // Wait indefinitely until token is fixed and daemon is restarted
+                    while (!stoppingToken.IsCancellationRequested)
+                    {
+                        await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                    }
+                    return;
+                }
+
                 var initial = _sensors.CollectAll();
                 foreach (var sensor in initial)
                 {
@@ -77,6 +90,16 @@ public class DeskLinkApp : BackgroundService
             catch (Exception ex)
             {
                 Console.WriteLine($"[HA DeskLink] Initial registration failed: {ex.Message}");
+                if (_api.IsBlocked)
+                {
+                    Console.WriteLine("[HA DeskLink] Login gesperrt: Token ungültig. Bitte überprüfe deinen Home Assistant Token in den Einstellungen.");
+                    Console.WriteLine("[HA DeskLink] Daemon bleibt inaktiv bis zur manuellen Korrektur des Tokens.");
+                    while (!stoppingToken.IsCancellationRequested)
+                    {
+                        await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                    }
+                    return;
+                }
             }
         }
 
@@ -90,7 +113,8 @@ public class DeskLinkApp : BackgroundService
         }
 
         _wsClient = new HaWebSocketClient(_config.HaUrl, _config.HaToken, webhookId,
-            msg => Console.WriteLine($"[HA DeskLink] Notification: {msg}"));
+            msg => Console.WriteLine($"[HA DeskLink] Notification: {msg}"),
+            isBlocked: () => _api.IsBlocked);
         _ = _wsClient.ConnectAsync();
 
         // Check for updates

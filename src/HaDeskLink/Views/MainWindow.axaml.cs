@@ -93,14 +93,25 @@ public partial class MainWindow : Window
     {
         var config = Config.Load();
         var urlBox = new TextBox { Text = config.HaUrl, Watermark = "https://homeassistant.local:8123" };
-        var tokenBox = new TextBox { Watermark = "Long-Lived Token", PasswordChar = '•' };
+        var tokenBox = new TextBox { Text = config.HaToken, Watermark = "Long-Lived Token", PasswordChar = '•' };
         var sslCheck = new CheckBox { Content = "SSL-Zertifikat prüfen", IsChecked = config.VerifySsl };
+
+        var statusText = new TextBlock
+        {
+            Text = "Verbinde deinen Linux-PC mit Home Assistant",
+            Foreground = Avalonia.Media.Brushes.Gray,
+            TextWrapping = Avalonia.Media.TextWrapping.Wrap
+        };
+
+        var connectBtn = new Button { Content = "Verbinden", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center };
+        var retryBtn = new Button { Content = "🔄 Erneut versuchen", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center, IsVisible = false };
+        var buttonPanel = new StackPanel { Spacing = 8, Children = { connectBtn, retryBtn } };
 
         var dialog = new Window
         {
             Title = "HA DeskLink – Einrichtung",
             Width = 450,
-            Height = 320,
+            Height = 380,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Content = new StackPanel
             {
@@ -109,28 +120,29 @@ public partial class MainWindow : Window
                 Children =
                 {
                     new TextBlock { Text = "HA DeskLink Setup", FontSize = 18, FontWeight = Avalonia.Media.FontWeight.Bold },
-                    new TextBlock { Text = "Verbinde deinen Linux-PC mit Home Assistant", Foreground = Avalonia.Media.Brushes.Gray },
+                    statusText,
                     new TextBlock { Text = "HA URL:" },
                     urlBox,
                     new TextBlock { Text = "Long-Lived Token:" },
                     tokenBox,
                     sslCheck,
                     new TextBlock { Text = "Token: HA → Profil → Sicherheit → Long-Lived Access Tokens", FontSize = 11, Foreground = Avalonia.Media.Brushes.Gray },
-                    new Button { Content = "Verbinden", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center }
+                    buttonPanel
                 }
             }
         };
 
-        var connectBtn = ((StackPanel)dialog.Content).Children[^1] as Button;
-        var statusText = ((StackPanel)dialog.Content).Children[1] as TextBlock;
+        // Shared API client to track retry count across attempts
+        var api = new HaApiClient(Config.GetConfigDir(), sslCheck.IsChecked ?? false);
+        api.LoadRegistration();
 
-        connectBtn!.Click += async (s, args) =>
+        connectBtn.Click += async (s, args) =>
         {
             connectBtn.IsEnabled = false;
+            retryBtn.IsVisible = false;
             connectBtn.Content = "Verbindet...";
             try
             {
-                var api = new HaApiClient(Config.GetConfigDir(), sslCheck.IsChecked ?? false);
                 await api.RegisterAsync(urlBox.Text?.Trim() ?? "", tokenBox.Text?.Trim() ?? "");
                 config.HaUrl = urlBox.Text?.Trim() ?? "";
                 config.HaToken = tokenBox.Text?.Trim() ?? "";
@@ -142,11 +154,41 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                statusText!.Text = $"✗ Fehler: {ex.Message}";
-                statusText.Foreground = Avalonia.Media.Brushes.Red;
-                connectBtn.IsEnabled = true;
-                connectBtn.Content = "Verbinden";
+                var message = ex.Message;
+                if (ex is InvalidOperationException && message.Contains("Login fehlgeschlagen"))
+                {
+                    statusText.Text = message;
+                    statusText.Foreground = Avalonia.Media.Brushes.Red;
+                    connectBtn.IsVisible = false;
+                    retryBtn.IsVisible = true;
+                }
+                else if (api.IsBlocked)
+                {
+                    statusText.Text = "Login fehlgeschlagen. Token ungültig. Bitte überprüfe deinen Home Assistant Token in den Einstellungen.";
+                    statusText.Foreground = Avalonia.Media.Brushes.Red;
+                    connectBtn.IsVisible = false;
+                    retryBtn.IsVisible = true;
+                }
+                else
+                {
+                    statusText.Text = $"✗ Fehler ({api.FailedLoginAttempts}/{HaApiClient.MaxFailedLoginAttempts}): {ex.Message}";
+                    statusText.Foreground = Avalonia.Media.Brushes.Red;
+                    connectBtn.IsEnabled = true;
+                    connectBtn.Content = "Verbinden";
+                }
             }
+        };
+
+        retryBtn.Click += (s, args) =>
+        {
+            // Reset block state so user can try again
+            api.ResetBlockState();
+            statusText.Text = "Verbinde deinen Linux-PC mit Home Assistant";
+            statusText.Foreground = Avalonia.Media.Brushes.Gray;
+            connectBtn.IsVisible = true;
+            retryBtn.IsVisible = false;
+            connectBtn.IsEnabled = true;
+            connectBtn.Content = "Verbinden";
         };
 
         await dialog.ShowDialog(this);

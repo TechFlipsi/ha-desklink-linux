@@ -47,6 +47,7 @@
   "setup_connecting": "Verbinde mit Home Assistant...",
   "setup_success": "Verbindung erfolgreich!",
   "setup_failed": "Verbindung fehlgeschlagen. Bitte URL und Token prüfen.",
+  "setup_failed_blocked": "Login fehlgeschlagen. Token ungültig. Bitte überprüfe deinen Home Assistant Token in den Einstellungen.",
   "brightness_up": "Heller",
   "brightness_down": "Dunkler",
   "command_shutdown_msg": "HA DeskLink: PC wird heruntergefahren",

@@ -34,6 +34,22 @@ public class HaApiClient
     private string _token = "";
     private readonly string _configDir;
 
+    /// <summary>
+    /// Counter for consecutive failed login/registration attempts.
+    /// Resets to 0 on successful connection.
+    /// </summary>
+    public int FailedLoginAttempts { get; private set; }
+
+    /// <summary>
+    /// Maximum allowed failed login attempts before blocking.
+    /// </summary>
+    public const int MaxFailedLoginAttempts = 3;
+
+    /// <summary>
+    /// True when the client has been blocked due to too many failed attempts.
+    /// </summary>
+    public bool IsBlocked => FailedLoginAttempts >= MaxFailedLoginAttempts;
+
     private string WebhookUrl => string.IsNullOrEmpty(_cloudUrl)
         ? $"{_haUrl}/api/webhook/{_webhookId}"
         : _cloudUrl;
@@ -57,6 +73,12 @@ public class HaApiClient
 
     public async Task RegisterAsync(string haUrl, string token)
     {
+        if (IsBlocked)
+        {
+            throw new InvalidOperationException(
+                "Login fehlgeschlagen. Token ungültig. Bitte überprüfe deinen Home Assistant Token in den Einstellungen.");
+        }
+
         _haUrl = haUrl.TrimEnd('/');
         SetToken(token);
 
@@ -82,16 +104,43 @@ public class HaApiClient
         };
 
         var json = JsonSerializer.Serialize(payload);
-        var resp = await _http.PostAsync($"{_haUrl}/api/mobile_app/registrations",
-            new StringContent(json, Encoding.UTF8, "application/json"));
-        resp.EnsureSuccessStatusCode();
 
-        var data = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-        _webhookId = data.RootElement.GetProperty("webhook_id").GetString() ?? "";
-        _cloudUrl = data.RootElement.TryGetProperty("cloudhook_url", out var cu) ? cu.GetString() ?? "" : "";
-        _deviceId = data.RootElement.TryGetProperty("device_id", out var di) ? di.GetString() ?? "" : "";
+        try
+        {
+            var resp = await _http.PostAsync($"{_haUrl}/api/mobile_app/registrations",
+                new StringContent(json, Encoding.UTF8, "application/json"));
+            resp.EnsureSuccessStatusCode();
 
-        SaveRegistration(haUrl, token);
+            var data = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            _webhookId = data.RootElement.GetProperty("webhook_id").GetString() ?? "";
+            _cloudUrl = data.RootElement.TryGetProperty("cloudhook_url", out var cu) ? cu.GetString() ?? "" : "";
+            _deviceId = data.RootElement.TryGetProperty("device_id", out var di) ? di.GetString() ?? "" : "";
+
+            // Reset counter on successful connection
+            FailedLoginAttempts = 0;
+
+            SaveRegistration(haUrl, token);
+        }
+        catch (HttpRequestException)
+        {
+            FailedLoginAttempts++;
+            if (IsBlocked)
+            {
+                throw new InvalidOperationException(
+                    "Login fehlgeschlagen. Token ungültig. Bitte überprüfe deinen Home Assistant Token in den Einstellungen.");
+            }
+            throw;
+        }
+        catch (Exception)
+        {
+            FailedLoginAttempts++;
+            if (IsBlocked)
+            {
+                throw new InvalidOperationException(
+                    "Login fehlgeschlagen. Token ungültig. Bitte überprüfe deinen Home Assistant Token in den Einstellungen.");
+            }
+            throw;
+        }
     }
 
     public string GetWebhookId() => _webhookId;
@@ -340,5 +389,13 @@ public class HaApiClient
         }
         catch { }
         return "2.1.1";
+    }
+
+    /// <summary>
+    /// Reset the block state and retry counter, allowing a new connection attempt.
+    /// </summary>
+    public void ResetBlockState()
+    {
+        FailedLoginAttempts = 0;
     }
 }
