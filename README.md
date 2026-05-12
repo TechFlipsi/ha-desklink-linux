@@ -4,7 +4,7 @@
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
 [![License](https://img.shields.io/github/license/TechFlipsi/ha-desklink-linux?label=License)](https://github.com/TechFlipsi/ha-desklink-linux/LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/TechFlipsi/ha-desklink-linux/total?label=Downloads)](https://github.com/TechFlipsi/ha-desklink-linux/releases)
-[![Discord](https://img.shields.io/discord/1496261911677894867?label=Discord)](https://discord.gg/HnCZY54U7)
+[![Discord](https://img.shields.io/discord/1496261911677894867?label=Discord)](https://discord.gg/7G2SqpXpsC)
 
 ⚠️ **PRE-RELEASE / BETA** – Diese Version wurde noch nicht auf einem echten Linux-System getestet. Verwendung auf eigene Gefahr. Feedback und Bug-Reports sind willkommen!
 
@@ -145,7 +145,7 @@ This program is free software: you can redistribute it and/or modify it under th
 Es gibt jetzt eine macOS-Version von HA DeskLink! 🎉 Siehe [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ Community Test Version, nicht vom Entwickler getestet.
 
 ## Community
-💬 [Discord](https://discord.gg/HnCZY54U7) – Fragen, Feedback, Hilfe
+💬 [Discord](https://discord.gg/7G2SqpXpsC) – Fragen, Feedback, Hilfe
 
 ## Erstellung
 Dieses Projekt wurde unter Verwendung von KI-Unterstützung erstellt. Der gesamte Code wurde von **GLM-5.1** (via OpenClaw) geschrieben und entwickelt – von der Architektur über die Implementierung bis zum Debugging. Die englische Dokumentation wurde ebenfalls von der KI aus dem Deutschen ins Englische übersetzt. Die deutsche Dokumentation ist die Originalversion.
