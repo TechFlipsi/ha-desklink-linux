@@ -117,7 +117,7 @@ public class DashboardWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
             };
-            _webView.Url = _haUrl + "?external_auth=1";
+            _webView.Navigate(new Uri(_haUrl + "?external_auth=1"));
             _webView.NavigationCompleted += OnNavigationCompleted;
 
             _mainPanel!.Child = _webView;
@@ -135,7 +135,7 @@ public class DashboardWindow : Window
         try
         {
             await Task.Delay(500);
-            _webView.EvaluateJavaScript(BuildExternalAuthScript());
+            await _webView.ExecuteScriptAsync(BuildExternalAuthScript());
         }
         catch (Exception ex)
         {
