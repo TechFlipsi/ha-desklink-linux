@@ -15,6 +15,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.WebView.Desktop;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
