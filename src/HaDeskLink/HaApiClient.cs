@@ -399,7 +399,7 @@ public class HaApiClient
             if (File.Exists(vfile)) return File.ReadAllText(vfile).Trim();
         }
         catch { }
-        return "3.0.8";
+        return "3.1.0";
     }
 
     /// <summary>
