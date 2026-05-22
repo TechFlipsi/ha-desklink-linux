@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using AvaloniaWebView;
+using WebViewCore.Events;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
