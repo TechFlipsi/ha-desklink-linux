@@ -16,6 +16,7 @@
     <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.3" />
+    <PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
     <PackageReference Include="WebView.Avalonia.Linux.Cross" Version="11.2.4" />
     <PackageReference Include="WebView.Avalonia.Desktop.Cross" Version="11.2.4" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
