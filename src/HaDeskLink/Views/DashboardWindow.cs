@@ -117,7 +117,7 @@ public class DashboardWindow : Window
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
             };
-            _webView.Navigate(new Uri(_haUrl + "?external_auth=1"));
+            _webView.Url = new Uri(_haUrl + "?external_auth=1");
             _webView.NavigationCompleted += OnNavigationCompleted;
 
             _mainPanel!.Child = _webView;
