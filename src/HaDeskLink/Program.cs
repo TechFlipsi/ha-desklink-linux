@@ -185,5 +185,6 @@ Config: {Config.GetConfigDir()}");
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .LogToTrace();
+            .LogToTrace()
+            .UseDesktopWebView();
 }
