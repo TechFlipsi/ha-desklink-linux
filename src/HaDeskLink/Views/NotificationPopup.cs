@@ -1,58 +1,49 @@
 // HA DeskLink - Home Assistant Companion App
 // Copyright (C) 2026 Fabian Kirchweger
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License v3 as published by
-// the Free Software Foundation.
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace HaDeskLink.Views;
 
 /// <summary>
 /// Modern floating notification popup for HA push notifications.
-/// Slides in from top-right, auto-dismisses after 8s, supports action buttons.
+/// Auto-dismisses after 8s, supports action buttons.
 /// </summary>
 public class NotificationPopup : Window
 {
-    private readonly DispatcherTimer? _autoCloseTimer;
+    private DispatcherTimer? _autoCloseTimer;
     private bool _isClosing;
 
-    private static readonly IBrush BgBrush = new SolidColorBrush(Color.FromArgb(255, 26, 26, 46));
     private static readonly IBrush PanelBrush = new SolidColorBrush(Color.FromArgb(255, 22, 33, 62));
     private static readonly IBrush AccentBrush = new SolidColorBrush(Color.FromArgb(255, 15, 52, 96));
-    private static readonly IBrush HighlightBrush = new SolidColorBrush(Color.FromArgb(255, 233, 69, 96));
     private static readonly IBrush HaBlueBrush = new SolidColorBrush(Color.FromArgb(255, 66, 133, 244));
     private static readonly IBrush GrayBrush = new SolidColorBrush(Color.FromArgb(255, 140, 140, 160));
 
     public NotificationPopup(string title, string message, List<NotificationActionInfo>? actions = null)
     {
-        SystemBackground = Brushes.Transparent;
-        TransparentClientArea = true;
-        ExtendClientAreaToDecorationsHint = true;
         CanResize = false;
         ShowInTaskbar = false;
         Topmost = true;
         Width = 380;
         SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.Manual;
+        Background = new SolidColorBrush(Color.FromArgb(255, 26, 26, 46));
 
         actions ??= new List<NotificationActionInfo>();
 
-        // Build left accent bar
         var accentBar = new Border { Background = HaBlueBrush, CornerRadius = new CornerRadius(12, 0, 0, 12) };
         Grid.SetColumn(accentBar, 0);
 
-        // Build content
-        var contentStack = new StackPanel { Margin = new Thickness(16, 14, 14, 14), Spacing = 8, Children = BuildContentChildren(title, message, actions) };
+        var contentStack = new StackPanel { Margin = new Thickness(16, 14, 14, 14), Spacing = 8 };
         Grid.SetColumn(contentStack, 1);
+        BuildContentChildren(contentStack, title, message, actions);
 
         var card = new Border
         {
@@ -60,7 +51,6 @@ public class NotificationPopup : Window
             CornerRadius = new CornerRadius(12),
             ClipToBounds = true,
             Margin = new Thickness(8),
-            BoxShadow = new BoxShadows(new BoxShadow { Color = Color.FromArgb(80, 0, 0, 0), Blur = 16, OffsetX = 0, OffsetY = 4 }),
             Child = new Grid
             {
                 ColumnDefinitions = ColumnDefinitions.Parse("4,*"),
@@ -71,34 +61,29 @@ public class NotificationPopup : Window
         Content = card;
 
         _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
-        _autoCloseTimer.Tick += (s, e) => { _autoCloseTimer.Stop(); CloseAnimated(); };
+        _autoCloseTimer.Tick += (s, e) => { _autoCloseTimer!.Stop(); CloseAnimated(); };
         _autoCloseTimer.Start();
 
-        PointerEnter += (s, e) => _autoCloseTimer?.Stop();
-        PointerLeave += (s, e) => { if (!_isClosing) _autoCloseTimer?.Start(); };
+        PointerEntered += (s, e) => _autoCloseTimer?.Stop();
+        PointerExited += (s, e) => { if (!_isClosing) _autoCloseTimer?.Start(); };
     }
 
-    private List<Control> BuildContentChildren(string title, string message, List<NotificationActionInfo> actions)
+    private void BuildContentChildren(StackPanel stack, string title, string message, List<NotificationActionInfo> actions)
     {
-        var children = new List<Control>();
-
-        // Header row
         var titleText = new TextBlock { Text = title, FontSize = 15, FontWeight = FontWeight.Bold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
         Grid.SetColumn(titleText, 0);
         var closeBtn = new Button { Content = "✕", FontSize = 14, Background = Brushes.Transparent, Foreground = GrayBrush, Padding = new Thickness(4, 2), CornerRadius = new CornerRadius(4), VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Right };
         Grid.SetColumn(closeBtn, 1);
         closeBtn.Click += (s, e) => CloseAnimated();
 
-        var headerGrid = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*,Auto"), Children = { titleText, closeBtn } };
-        children.Add(headerGrid);
+        var headerGrid = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*,Auto") };
+        headerGrid.Children.Add(titleText);
+        headerGrid.Children.Add(closeBtn);
+        stack.Children.Add(headerGrid);
 
-        // Message
-        children.Add(new TextBlock { Text = message, FontSize = 13, Foreground = new SolidColorBrush(Color.FromArgb(255, 200, 200, 215)), TextWrapping = TextWrapping.Wrap, MaxLines = 5 });
+        stack.Children.Add(new TextBlock { Text = message, FontSize = 13, Foreground = new SolidColorBrush(Color.FromArgb(255, 200, 200, 215)), TextWrapping = TextWrapping.Wrap, MaxLines = 5 });
+        stack.Children.Add(new TextBlock { Text = DateTime.Now.ToString("HH:mm"), FontSize = 11, Foreground = GrayBrush, HorizontalAlignment = HorizontalAlignment.Right });
 
-        // Timestamp
-        children.Add(new TextBlock { Text = DateTime.Now.ToString("HH:mm"), FontSize = 11, Foreground = GrayBrush, HorizontalAlignment = HorizontalAlignment.Right });
-
-        // Action buttons
         if (actions.Count > 0)
         {
             var btnPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 4, 0, 0) };
@@ -108,10 +93,8 @@ public class NotificationPopup : Window
                 btn.Click += (s, e) => { action.OnAction?.Invoke(); CloseAnimated(); };
                 btnPanel.Children.Add(btn);
             }
-            children.Add(btnPanel);
+            stack.Children.Add(btnPanel);
         }
-
-        return children;
     }
 
     public void PositionTopRight(double offsetX = 20, double offsetY = 20)

@@ -176,8 +176,9 @@ public class DashboardWindow : Window
                 return;
             }
 
-            // Set properties via reflection (NativeWebView)
-            SetWebViewProperty(_webView, "Dock", Avalonia.Layout.Dock.Fill);
+            // Try to make WebView fill the parent
+            SetWebViewProperty(_webView, "HorizontalAlignment", HorizontalAlignment.Stretch);
+            SetWebViewProperty(_webView, "VerticalAlignment", VerticalAlignment.Stretch);
 
             // Build the auth URL
             var dashboardUrl = $"{_haUrl}?external_auth=1";
