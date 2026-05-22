@@ -32,7 +32,7 @@ public class Config
 
     public string HaUrl { get; set; } = "";
     public string HaToken { get; set; } = "";
-    public bool VerifySsl { get; set; } = false;
+    public bool VerifySsl { get; set; } = true;
     public int SensorInterval { get; set; } = 30;
     public string UpdateChannel { get; set; } = "stable";
     public string Language { get; set; } = "de";
@@ -66,17 +66,16 @@ public class Config
         Directory.CreateDirectory(ConfigDir);
         File.WriteAllText(keyPath, Convert.ToBase64String(key));
 
-        // Set file permissions to owner-only (Linux)
+        // Set file permissions to owner-only (Linux/macOS)
+#pragma warning disable CA1416
         try
         {
-            var chmod = new System.Diagnostics.ProcessStartInfo("chmod", "600 " + keyPath)
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            System.Diagnostics.Process.Start(chmod)?.WaitForExit(2000);
+#if LINUX || MACOS
+            File.SetUnixFileMode(keyPath, System.IO.UnixFileMode.UserRead | System.IO.UnixFileMode.UserWrite);
+#endif
         }
         catch { }
+#pragma warning restore CA1416
 
         return key;
     }
@@ -206,6 +205,17 @@ public class Config
 
         var json = JsonSerializer.Serialize(saveConfig, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(ConfigPath, json);
+
+        // Secure config file permissions (Linux/macOS)
+#pragma warning disable CA1416
+        try
+        {
+#if LINUX || MACOS
+            File.SetUnixFileMode(ConfigPath, System.IO.UnixFileMode.UserRead | System.IO.UnixFileMode.UserWrite);
+#endif
+        }
+        catch { }
+#pragma warning restore CA1416
     }
 
     public static string GetConfigDir() => ConfigDir;

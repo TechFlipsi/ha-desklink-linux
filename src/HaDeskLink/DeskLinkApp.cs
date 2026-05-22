@@ -114,7 +114,8 @@ public class DeskLinkApp : BackgroundService
 
         _wsClient = new HaWebSocketClient(_config.HaUrl, _config.HaToken, webhookId,
             msg => Console.WriteLine($"[HA DeskLink] Notification: {msg}"),
-            isBlocked: () => _api.IsBlocked);
+            isBlocked: () => _api.IsBlocked,
+            verifySsl: _config.VerifySsl);
         _ = _wsClient.ConnectAsync();
 
         // Check for updates

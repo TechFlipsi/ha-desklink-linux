@@ -5,10 +5,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>ha-desklink</AssemblyName>
     <RootNamespace>HaDeskLink</RootNamespace>
-    <Version>3.0.8</Version>
+    <Version>3.0.9</Version>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
-
+    <DefineConstants>LINUX</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="VERSION" CopyToOutputDirectory="PreserveNewst" />
+    <None Include="VERSION" CopyToOutputDirectory="PreserveNewest" />
     <AvaloniaResource Include="Assets/icon.png" />
     <None Include="Lang/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

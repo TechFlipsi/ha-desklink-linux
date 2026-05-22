@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/ha-desklink
+ExecStart=/usr/local/bin/ha-desklink --daemon
 Restart=on-failure
 RestartSec=10
 Environment=DOTNET_ENVIRONMENT=Production
