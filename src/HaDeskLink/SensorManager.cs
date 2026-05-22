@@ -608,19 +608,9 @@ public class SensorManager
     {
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "readlink",
-                Arguments = path,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true
-            };
-            var proc = System.Diagnostics.Process.Start(psi);
-            if (proc == null) return "";
-            var output = proc.StandardOutput.ReadToEnd().Trim();
-            proc.WaitForExit(2000);
-            return output;
+            // Use .NET 8 native API instead of spawning a process
+            var target = File.ResolveLinkTarget(path, returnFinalTarget: false);
+            return target?.FullName ?? "";
         }
         catch { return ""; }
     }

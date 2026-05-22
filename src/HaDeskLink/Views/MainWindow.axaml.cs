@@ -247,7 +247,8 @@ public partial class MainWindow : Window
             };
             btn.Click += async (s, args) =>
             {
-                var a = (QuickActionItem)((Button)s).Tag!;
+                var a = (s as Button)?.Tag as QuickActionItem;
+                if (a == null) return;
                 try
                 {
                     await api.ToggleEntityAsync(a.EntityId);

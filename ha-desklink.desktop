@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=HA DeskLink
+Comment=Home Assistant Companion for Linux
+Exec=/usr/local/bin/ha-desklink
+Icon=ha-desklink
+Terminal=false
+Type=Application
+Categories=Network;Monitor;
+StartupNotify=true

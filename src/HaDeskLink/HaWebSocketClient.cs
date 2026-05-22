@@ -34,6 +34,7 @@ public class HaWebSocketClient : IDisposable
     private readonly string _webhookId;
     private readonly Action<string>? _onNotification;
     private readonly Func<bool>? _isBlocked;
+    private readonly bool _verifySsl;
     private ClientWebSocket? _ws;
     private CancellationTokenSource? _cts;
     private int _consecutiveFailures;
@@ -44,13 +45,14 @@ public class HaWebSocketClient : IDisposable
     /// </summary>
     public bool IsBlocked => _consecutiveFailures >= MaxFailures;
 
-    public HaWebSocketClient(string haUrl, string token, string webhookId, Action<string>? onNotification = null, Func<bool>? isBlocked = null)
+    public HaWebSocketClient(string haUrl, string token, string webhookId, Action<string>? onNotification = null, Func<bool>? isBlocked = null, bool verifySsl = true)
     {
         _haUrl = haUrl;
         _token = token;
         _webhookId = webhookId;
         _onNotification = onNotification;
         _isBlocked = isBlocked;
+        _verifySsl = verifySsl;
     }
 
     public async Task ConnectAsync()
@@ -74,11 +76,18 @@ public class HaWebSocketClient : IDisposable
             try
             {
                 _ws = new ClientWebSocket();
-                var wsUrl = _haUrl.Replace("https://", "wss://").Replace("http://", "ws://") + "/api/websocket";
+                if (!_verifySsl)
+                {
+                    _ws.Options.RemoteCertificateValidationCallback = (sender, cert, chain, errors) => true;
+                }
+                // Build WebSocket URL properly using Uri class to handle path prefixes
+                var uri = new Uri(_haUrl);
+                var wsScheme = uri.Scheme == "https" ? "wss" : "ws";
+                var wsUrl = $"{wsScheme}://{uri.Authority}/api/websocket";
                 await _ws.ConnectAsync(new Uri(wsUrl), ct);
 
                 // Auth handshake
-                var buffer = new byte[8192];
+                var buffer = new byte[65536];
                 var result = await _ws.ReceiveAsync(buffer, ct);
                 var authMsg = Encoding.UTF8.GetString(buffer, 0, result.Count);
 
