@@ -1,5 +1,12 @@
 # Changelog
 
+## [v3.1.0] - 2026-05-23
+- 🌐 **Eingebettetes Dashboard:** NativeWebView zeigt HA direkt in der App (wie Handy-App!)
+- 🔑 **Auto-Login:** Long-Lived Access Token → automatischer Login via `external_auth` API
+- 🛡️ **IP-Ban-Schutz:** Rate-Limiting (max 3→5 Versuche), exponentielles Backoff, Token-Validierung
+- 🔄 **Intelligenter Fallback:** Kein Token → Browser; WebView fehlt → Browser; Token ungültig → Schutz
+- 📦 **Neue Dependency:** `Avalonia.Controls.WebView` (NativeWebView für Linux/macOS/Windows)
+
 ## [v3.0.7] - 2026-04-22
 - 📖 **Doku aktualisiert:** README, README_EN, MANUAL, COMPARISON auf v3.0-Stand
 - 🎨 **Dashboard modernisiert:** Bessere Übersicht, Sektions-Header
