@@ -128,7 +128,7 @@ public class DashboardWindow : Window
         }
     }
 
-    private async void OnNavigationCompleted(object? sender, WebViewEventArgs e)
+    private async void OnNavigationCompleted(object? sender, WebViewUrlLoadedEventArg e)
     {
         if (_webView == null || _authGuard.IsBlocked) return;
         try
