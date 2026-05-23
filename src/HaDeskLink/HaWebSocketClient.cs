@@ -146,10 +146,20 @@ public class HaWebSocketClient : IDisposable
                 {
                     try
                     {
-                        result = await _ws.ReceiveAsync(buffer, ct);
+                        // Read messages with support for multi-frame (fragmented) messages >64KB
+                        using var ms = new MemoryStream();
+                        WebSocketReceiveResult result;
+                        do
+                        {
+                            result = await _ws.ReceiveAsync(buffer, ct);
+                            ms.Write(buffer, 0, result.Count);
+                        } while (!result.EndOfMessage);
+
                         if (result.MessageType == WebSocketMessageType.Close) break;
 
-                        var msg = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                        ms.Position = 0;
+                        using var reader = new StreamReader(ms, Encoding.UTF8);
+                        var msg = reader.ReadToEnd();
                         HandleMessage(msg);
                     }
                     catch { break; }
@@ -157,9 +167,8 @@ public class HaWebSocketClient : IDisposable
             }
             catch
             {
-                // Connection failed
-                _consecutiveFailures++;
-                Console.WriteLine($"[WebSocket] Connection failed ({_consecutiveFailures}/{MaxFailures})");
+                // Connection failed - network error (not auth), don't increment failure counter
+                Console.WriteLine($"[WebSocket] Connection failed (attempt {_consecutiveFailures + 1}/{MaxFailures})");
             }
 
             if (!ct.IsCancellationRequested)
