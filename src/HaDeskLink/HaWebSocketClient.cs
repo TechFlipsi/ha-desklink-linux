@@ -148,14 +148,14 @@ public class HaWebSocketClient : IDisposable
                     {
                         // Read messages with support for multi-frame (fragmented) messages >64KB
                         using var ms = new MemoryStream();
-                        WebSocketReceiveResult result;
+                        WebSocketReceiveResult recvResult;
                         do
                         {
-                            result = await _ws.ReceiveAsync(buffer, ct);
-                            ms.Write(buffer, 0, result.Count);
-                        } while (!result.EndOfMessage);
+                            recvResult = await _ws.ReceiveAsync(buffer, ct);
+                            ms.Write(buffer, 0, recvResult.Count);
+                        } while (!recvResult.EndOfMessage);
 
-                        if (result.MessageType == WebSocketMessageType.Close) break;
+                        if (recvResult.MessageType == WebSocketMessageType.Close) break;
 
                         ms.Position = 0;
                         using var reader = new StreamReader(ms, Encoding.UTF8);
