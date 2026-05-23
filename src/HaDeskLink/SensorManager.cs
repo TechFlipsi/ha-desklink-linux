@@ -140,7 +140,7 @@ public class SensorManager
             foreach (var drive in DriveInfo.GetDrives().Where(d => d.IsReady && d.DriveType == DriveType.Fixed))
             {
                 var label = drive.Name.TrimEnd('/');
-                var driveKey = label.Replace("/", "").ToLower();
+                var driveKey = (label == "/" ? "root" : label.Replace("/", "").ToLower());
 
                 var total = (double)drive.TotalSize / (1024 * 1024 * 1024);
                 var free = (double)drive.AvailableFreeSpace / (1024 * 1024 * 1024);
@@ -253,13 +253,17 @@ public class SensorManager
                     var labelFile = file.Replace("_input", "_label");
                     var label = File.Exists(labelFile) ? File.ReadAllText(labelFile).Trim() : $"temp {Path.GetFileName(file)}";
 
+                    // Extract index from filename (e.g., temp1_input -> 1) to create unique IDs
+                    var idxMatch = Regex.Match(Path.GetFileName(file), @"temp(\d+)_input");
+                    var idx = idxMatch.Success ? idxMatch.Groups[1].Value : "";
+
                     if (hwmonName.Contains("cpu", StringComparison.OrdinalIgnoreCase) || hwmonName.Contains("k10temp", StringComparison.OrdinalIgnoreCase) || hwmonName.Contains("coretemp", StringComparison.OrdinalIgnoreCase))
                     {
                         // Already covered by cpu_temperature
                     }
                     else
                     {
-                        var uid = $"hwmon_{hwmonName}_temp";
+                        var uid = $"hwmon_{hwmonName}_temp{idx}";
                         result.Add(new SensorData(uid, $"{hwmonName} {label}", Math.Round(temp, 1), "°C",
                             icon: "mdi:thermometer", stateClass: "measurement"));
                     }

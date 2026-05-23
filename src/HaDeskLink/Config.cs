@@ -15,6 +15,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 
 namespace HaDeskLink;
 
@@ -55,29 +56,64 @@ public class Config
     private static byte[] GetOrCreateKey()
     {
         var keyPath = Path.Combine(ConfigDir, ".key");
+
+        // Try to read existing key with file locking to avoid race conditions
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                if (File.Exists(keyPath))
+                {
+                    using var fs = new FileStream(keyPath, FileMode.Open, FileAccess.Read, FileShare.None);
+                    using var reader = new StreamReader(fs);
+                    return Convert.FromBase64String(reader.ReadToEnd().Trim());
+                }
+
+                // File doesn't exist yet, create it with exclusive lock
+                Directory.CreateDirectory(ConfigDir);
+                using (var fs = new FileStream(keyPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    // Generate new 256-bit key
+                    var key = new byte[32];
+                    RandomNumberGenerator.Fill(key);
+                    var keyStr = Convert.ToBase64String(key);
+                    using var writer = new StreamWriter(fs);
+                    writer.Write(keyStr);
+                    fs.Flush();
+
+                    // Set file permissions to owner-only (Linux/macOS)
+#pragma warning disable CA1416
+                    try
+                    {
+#if LINUX || MACOS
+                        File.SetUnixFileMode(keyPath, System.IO.UnixFileMode.UserRead | System.IO.UnixFileMode.UserWrite);
+#endif
+                    }
+                    catch { }
+#pragma warning restore CA1416
+
+                    return key;
+                }
+            }
+            catch (IOException)
+            {
+                // Another process is writing the key - wait and retry
+                Thread.Sleep(50);
+            }
+        }
+
+        // Fallback: if all retries exhausted, read without locking
         if (File.Exists(keyPath))
         {
             return Convert.FromBase64String(File.ReadAllText(keyPath).Trim());
         }
 
-        // Generate new 256-bit key
-        var key = new byte[32];
-        RandomNumberGenerator.Fill(key);
+        // Last resort: generate without locking
+        var fallbackKey = new byte[32];
+        RandomNumberGenerator.Fill(fallbackKey);
         Directory.CreateDirectory(ConfigDir);
-        File.WriteAllText(keyPath, Convert.ToBase64String(key));
-
-        // Set file permissions to owner-only (Linux/macOS)
-#pragma warning disable CA1416
-        try
-        {
-#if LINUX || MACOS
-            File.SetUnixFileMode(keyPath, System.IO.UnixFileMode.UserRead | System.IO.UnixFileMode.UserWrite);
-#endif
-        }
-        catch { }
-#pragma warning restore CA1416
-
-        return key;
+        File.WriteAllText(keyPath, Convert.ToBase64String(fallbackKey));
+        return fallbackKey;
     }
 
     /// <summary>

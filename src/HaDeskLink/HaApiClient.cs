@@ -54,7 +54,7 @@ public class HaApiClient
         ? $"{_haUrl}/api/webhook/{_webhookId}"
         : _cloudUrl;
 
-    public HaApiClient(string configDir, bool verifySsl = false)
+    public HaApiClient(string configDir, bool verifySsl = true)
     {
         _configDir = configDir;
         var handler = new HttpClientHandler
@@ -112,7 +112,7 @@ public class HaApiClient
             resp.EnsureSuccessStatusCode();
 
             var data = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-            _webhookId = data.RootElement.GetProperty("webhook_id").GetString() ?? "";
+            _webhookId = data.RootElement.TryGetProperty("webhook_id", out var wid) ? wid.GetString() ?? "" : "";
             _cloudUrl = data.RootElement.TryGetProperty("cloudhook_url", out var cu) ? cu.GetString() ?? "" : "";
             _deviceId = data.RootElement.TryGetProperty("device_id", out var di) ? di.GetString() ?? "" : "";
 
@@ -121,7 +121,8 @@ public class HaApiClient
 
             SaveRegistration(haUrl, token);
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                                               ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
         {
             FailedLoginAttempts++;
             if (IsBlocked)
@@ -131,14 +132,9 @@ public class HaApiClient
             }
             throw;
         }
-        catch (Exception)
+        catch (Exception) when (!(IsBlocked))
         {
-            FailedLoginAttempts++;
-            if (IsBlocked)
-            {
-                throw new InvalidOperationException(
-                    "Login fehlgeschlagen. Token ungültig. Bitte überprüfe deinen Home Assistant Token in den Einstellungen.");
-            }
+            // Network errors, timeouts, DNS failures - don't increment counter
             throw;
         }
     }
@@ -176,8 +172,8 @@ public class HaApiClient
         try
         {
             var data = JsonDocument.Parse(File.ReadAllText(path));
-            _haUrl = data.RootElement.GetProperty("ha_url").GetString() ?? "";
-            _webhookId = data.RootElement.GetProperty("webhook_id").GetString() ?? "";
+            _haUrl = data.RootElement.TryGetProperty("ha_url", out var hu) ? hu.GetString() ?? "" : "";
+            _webhookId = data.RootElement.TryGetProperty("webhook_id", out var wi) ? wi.GetString() ?? "" : "";
             _cloudUrl = data.RootElement.TryGetProperty("cloud_url", out var cu) ? cu.GetString() ?? "" : "";
             // Token is now loaded from encrypted Config, not from token.txt
             // Legacy migration: if token.txt still exists, remove it
