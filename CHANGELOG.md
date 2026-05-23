@@ -1,13 +1,11 @@
 # Changelog
 
 ## [v4.0.0] - 2026-05-23
-- 🆕 **Neu:** Embedded HA Dashboard mit WebView (Windows: WebView2, Linux: WebKitGTK) mit external_auth Auto-Login
+- 🆕 **Neu:** Embedded HA Dashboard mit WebView.Avalonia (WebKitGTK) + external_auth Auto-Login
 - 🆕 **Neu:** AuthGuard – IP-Ban-Schutz mit Rate-Limiting und Retry-Backoff
 - 🎨 **Redesign:** Moderne Notification-Popups (Dark Theme, abgerundete Ecken)
 - 🎨 **Redesign:** Modernisierte Einstellungen
-- ⚠️ **Breaking:** LibreHardwareMonitorLib + WinRing0 komplett entfernt → treiberloser Sensor-Stack
-- 🔒 **Security:** Keine Windows Defender "Vulnerable Driver" Warnung mehr
-- 📊 **Sensoren:** WMI + PerformanceCounter + nvidia-smi + AMD ADLX (treiberlos)
+- 📊 **Sensoren:** `/sys/class/thermal` + `hwmon` + `lm-sensors` (treiberlos)
 
 
 ## [v3.0.7] - 2026-04-22

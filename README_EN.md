@@ -1,4 +1,4 @@
-# HA DeskLink Linux v3.0
+# HA DeskLink Linux v4.0
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -20,7 +20,9 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 - 🌡️ **CPU & GPU Temperature** – via `/sys/class/thermal` and `hwmon`
 - 📊 **All Sensors** – CPU, RAM, all drives, Battery, Uptime, Network
 - 🖥️ **PC Commands from HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Volume, Brightness
-- 🖥️ **Graphical Interface** – Avalonia UI dashboard with status, sensors & setup
+- 🖥️ **Embedded Dashboard** – WebView.Avalonia shows HA dashboard in-app (with auto-login)
+- 🛡️ **AuthGuard** – IP-ban protection: rate limiting, exponential backoff, automatic lock pause
+- 🖥️ **Graphical UI** – Avalonia UI dashboard with status, sensors & setup
 - 📬 **Push Notifications** – WebSocket-based, like the mobile app
 - 🔔 **Actionable Notifications** – Notifications with action buttons
 - ⚡ **Quick Actions** – Dashboard button for HA entity toggles
