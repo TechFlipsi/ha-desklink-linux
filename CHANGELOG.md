@@ -1,5 +1,12 @@
 # Changelog
 
+## [v4.1.0] - 2026-05-23
+- 🎨 **Notification Toast Overhaul:** Modernes Dark-Theme-Design – Navy-Blue-Palette (#16213E), Accent-Farben (Blau/Grün), Timestamp-Label, Hover-Effekte auf Buttons
+- 🔔 **ShowConnectionToast:** Neue statische Methode mit grünem Accent für Verbindungs-Benachrichtigungen
+- 🛠 **Settings UI:** Tooltips auf allen Buttons für bessere Bedienbarkeit
+- 📌 **Version Bump:** Alle Versions-Strings auf 4.1.0 aktualisiert (VERSION, csproj, Fallback)
+- 🐛 **Bug Fix:** VERSION-Datei in src/HaDeskLink/VERSION zeigte falsche Version 3.0.9
+
 ## [v4.0.0] - 2026-05-23
 - 🆕 **Neu:** Embedded HA Dashboard mit WebView.Avalonia (WebKitGTK) — einmaliges Login, Session bleibt erhalten
 - 🎨 **Redesign:** Moderne Notification-Popups (Dark Theme, abgerundete Ecken)
