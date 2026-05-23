@@ -43,8 +43,8 @@
 
         <!-- Links -->
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16" Margin="0,0,0,4">
-            <Button Name="BtnDiscord" Content="💬 Discord" ToolTip.Tip="Community Discord Server – Fragen, Feedback & Hilfe" />
-            <Button Name="BtnGitHub" Content="📦 GitHub" ToolTip.Tip="HA DeskLink auf GitHub – Releases, Quellcode & Issues" />
+            <Button Name="BtnDiscord" Content="💬 Discord" ToolTip.Tip="Community Discord Server – Fragen, Feedback &amp; Hilfe" />
+            <Button Name="BtnGitHub" Content="📦 GitHub" ToolTip.Tip="HA DeskLink auf GitHub – Releases, Quellcode &amp; Issues" />
         </StackPanel>
 
         <!-- Info -->
