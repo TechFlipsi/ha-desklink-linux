@@ -1,5 +1,33 @@
 # Changelog
 
+## [v4.2.0] - 2026-05-23
+
+### 📊 Neue Sensoren
+- **idle_time** – Sekunden seit letzter Benutzereingabe
+- **active_window** – Aktives Fenster (Vordergrund-App)
+- **audio_volume** – System-Lautstärke 0-100%
+- **audio_mute** – Stummschaltung (on/off)
+- **mic_active** – Mikrofon in Benutzung (binary sensor)
+- **gpu_memory_used / gpu_memory_total** – GPU VRAM (NVIDIA/AMD)
+- **gpu_load** – GPU-Auslastung in %
+- **network_upload / network_download** – Netzwerk-Durchsatz in KB/s
+
+### ⚡ Neue Befehle
+- **lock_screen**, **sleep**, **hibernate** – PC-Energiebefehle
+- **volume_up**, **volume_down**, **volume_mute** – Lautstärke-Steuerung
+- **media_play_pause**, **media_next**, **media_previous** – Mediensteuerung
+
+### 🌍 Lokalisierung
+- 22 neue Lokalisierungs-Keys in allen 6 Sprachen (de, en, es, fr, zh, ja)
+
+### 🐛 Bugfixes
+- Empty Disk Key für Root-Mount "/" behoben
+- hwmon Duplicate IDs korrigiert
+- Over-aggressive Reconnect-Block entschärft
+- SSL defaults auf false gesetzt
+- WebSocket Message-Loop-Fix
+- Config Race Condition behoben
+
 ## [v4.1.0] - 2026-05-23
 - 🎨 **Notification Toast Overhaul:** Modernes Dark-Theme-Design – Navy-Blue-Palette (#16213E), Accent-Farben (Blau/Grün), Timestamp-Label, Hover-Effekte auf Buttons
 - 🔔 **ShowConnectionToast:** Neue statische Methode mit grünem Accent für Verbindungs-Benachrichtigungen

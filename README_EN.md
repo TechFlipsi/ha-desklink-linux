@@ -1,4 +1,4 @@
-# HA DeskLink Linux v4.1
+# HA DeskLink Linux v4.2
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -18,8 +18,8 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 
 ## Features
 - 🌡️ **CPU & GPU Temperature** – via `/sys/class/thermal` and `hwmon`
-- 📊 **All Sensors** – CPU, RAM, all drives, Battery, Uptime, Network
-- 🖥️ **PC Commands from HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Volume, Brightness
+- 📊 **All Sensors** – CPU, GPU, RAM, all drives, VRAM, Battery, Uptime, Network, Audio, Microphone, Webcam, Idle Time, Active Window
+- 🖥️ **PC Commands from HA** – Shutdown, Restart, Hibernate, Suspend, Sleep, Lock, Volume, Media Control, Brightness
 - 🖥️ **Embedded Dashboard** – WebView.Avalonia shows HA dashboard in-app (login once, session persists)
 - 🖥️ **Graphical UI** – Avalonia UI dashboard with status, sensors & setup
 - 📬 **Push Notifications** – WebSocket-based, like the mobile app
@@ -70,10 +70,14 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 | Restart | `restart` | Restarts the PC |
 | Hibernate | `hibernate` | Puts the PC into hibernation |
 | Suspend | `suspend` | Puts the PC into sleep mode |
-| Lock PC | `lock` | Locks the screen |
-| Mute | `mute` | Mutes the audio |
+| Sleep | `sleep` | Puts the PC into sleep mode |
+| Lock PC | `lock_screen` | Locks the screen |
+| Mute | `volume_mute` | Mutes the audio |
 | Volume Up | `volume_up` | Increases volume by 10% |
 | Volume Down | `volume_down` | Decreases volume by 10% |
+| Media Play/Pause | `media_play_pause` | Play/Pause media playback |
+| Media Next | `media_next` | Next track |
+| Media Previous | `media_previous` | Previous track |
 | Brightness Up | `brightness_up` | Increases brightness by 10% (⚠️ laptops only) |
 | Brightness Down | `brightness_down` | Decreases brightness by 10% (⚠️ laptops only) |
 | Brightness Set | `brightness:50` | Sets brightness to value 0-100 (⚠️ laptops only) |
@@ -91,6 +95,9 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 | `sensor.ha_desklink_cpu_usage` | CPU usage in % |
 | `sensor.ha_desklink_cpu_temperature` | CPU temperature in °C |
 | `sensor.ha_desklink_cpu_clock` | CPU clock speed in MHz |
+| `sensor.ha_desklink_gpu_load` | GPU usage in % |
+| `sensor.ha_desklink_gpu_memory_used` | GPU VRAM used in MB |
+| `sensor.ha_desklink_gpu_memory_total` | GPU VRAM total in MB |
 | `sensor.ha_desklink_memory_usage` | RAM usage in % |
 | `sensor.ha_desklink_memory_used` | RAM used in GB |
 | `sensor.ha_desklink_memory_free` | RAM free in GB |
@@ -103,6 +110,13 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 | `sensor.ha_desklink_wifi_ssid` | Connected WiFi network |
 | `binary_sensor.ha_desklink_connectivity` | Online/Offline status |
 | `sensor.ha_desklink_process_count` | Number of running processes |
+| `sensor.ha_desklink_network_upload` | Upload speed in KB/s |
+| `sensor.ha_desklink_network_download` | Download speed in KB/s |
+| `sensor.ha_desklink_audio_volume` | System volume in % |
+| `binary_sensor.ha_desklink_audio_mute` | Mute status (on/off) |
+| `binary_sensor.ha_desklink_mic_active` | Microphone in use (on/off) |
+| `sensor.ha_desklink_idle_time` | Seconds since last user input |
+| `sensor.ha_desklink_active_window` | Active window (foreground app) |
 | `sensor.ha_desklink_fan_*` | Fan speeds in RPM |
 | `sensor.ha_desklink_webcam_active` | Webcam active (on/off) |
 | `sensor.ha_desklink_fullscreen` | Fullscreen mode (on/off) |
