@@ -1,4 +1,4 @@
-# HA DeskLink Linux v4.1
+# HA DeskLink Linux v4.2
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -22,8 +22,8 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 
 ## Features
 - 🌡️ **CPU & GPU Temperatur** – via `/sys/class/thermal` und `hwmon`
-- 📊 **Alle Sensoren** – CPU, RAM, alle Laufwerke, Akku, Uptime, Netzwerk
-- 🖥️ **PC-Befehle aus HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Lautstärke
+- 📊 **Alle Sensoren** – CPU, GPU, RAM, alle Laufwerke, VRAM, Akku, Uptime, Netzwerk, Audio, Mikrofon, Webcam, Idle-Zeit, Aktives Fenster
+- 🖥️ **PC-Befehle aus HA** – Shutdown, Restart, Hibernate, Suspend, Sleep, Lock, Lautstärke, Mediensteuerung
 - 🖥️ **Eingebettetes Dashboard** – WebView.Avalonia zeigt HA-Dashboard direkt in der App (einmaliges Login, Session bleibt erhalten)
 - 🖥️ **Grafische Oberfläche** – Avalonia UI Dashboard mit Status, Sensoren & Einrichtung
 - 📬 **Push-Benachrichtigungen** – WebSocket-basiert, wie die Handy-App
@@ -75,10 +75,14 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | Neustarten | `restart` | Startet den PC neu |
 | Ruhezustand | `hibernate` | Versetzt in den Ruhezustand |
 | Bereitschaft | `suspend` | Versetzt in den Bereitschaftsmodus |
-| PC sperren | `lock` | Sperrt den Bildschirm |
-| Lautstärke stumm | `mute` | Schaltet den Ton stumm |
+| Energie sparen | `sleep` | Versetzt in den Energiesparmodus |
+| PC sperren | `lock_screen` | Sperrt den Bildschirm |
+| Lautstärke stumm | `volume_mute` | Schaltet den Ton stumm |
 | Lautstärke lauter | `volume_up` | Erhöht die Lautstärke um 10% |
 | Lautstärke leiser | `volume_down` | Verringert die Lautstärke um 10% |
+| Media Play/Pause | `media_play_pause` | Play/Pause für Medienwiedergabe |
+| Media Nächster | `media_next` | Nächster Titel |
+| Media Vorheriger | `media_previous` | Vorheriger Titel |
 | Helligkeit rauf | `brightness_up` | Erhöht die Bildschirmhelligkeit um 10% (⚠️ nur Laptops/int. Monitore) |
 | Helligkeit runter | `brightness_down` | Verringert die Bildschirmhelligkeit um 10% (⚠️ nur Laptops/int. Monitore) |
 | Helligkeit setzen | `brightness:50` | Setzt Helligkeit auf bestimmten Wert (0-100, ⚠️ nur Laptops/int. Monitore) |
@@ -94,6 +98,9 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | `sensor.ha_desklink_cpu_usage` | CPU-Auslastung in % |
 | `sensor.ha_desklink_cpu_temperature` | CPU-Temperatur in °C |
 | `sensor.ha_desklink_cpu_clock` | CPU-Taktrate in MHz |
+| `sensor.ha_desklink_gpu_load` | GPU-Auslastung in % |
+| `sensor.ha_desklink_gpu_memory_used` | GPU VRAM verwendet in MB |
+| `sensor.ha_desklink_gpu_memory_total` | GPU VRAM gesamt in MB |
 | `sensor.ha_desklink_memory_usage` | RAM-Auslastung in % |
 | `sensor.ha_desklink_memory_used` | RAM verwendet in GB |
 | `sensor.ha_desklink_memory_free` | RAM frei in GB |
@@ -106,8 +113,14 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 | `binary_sensor.ha_desklink_connectivity` | Online/Offline-Status |
 | `sensor.ha_desklink_process_count` | Anzahl laufende Prozesse |
 | `sensor.ha_desklink_wifi_ssid` | Verbundenes WiFi-Netzwerk |
+| `sensor.ha_desklink_network_upload` | Upload-Geschwindigkeit in KB/s |
+| `sensor.ha_desklink_network_download` | Download-Geschwindigkeit in KB/s |
+| `sensor.ha_desklink_audio_volume` | System-Lautstärke in % |
+| `binary_sensor.ha_desklink_audio_mute` | Stummschaltung (on/off) |
+| `binary_sensor.ha_desklink_mic_active` | Mikrofon in Benutzung (on/off) |
+| `sensor.ha_desklink_idle_time` | Sekunden seit letzter Benutzereingabe |
+| `sensor.ha_desklink_active_window` | Aktives Fenster (Vordergrund-App) |
 | `sensor.ha_desklink_fan_*` | Lüfter-Drehzahlen in RPM |
-| `sensor.ha_desklink_version` | Aktuelle HA DeskLink Version |
 | `sensor.ha_desklink_webcam_active` | Webcam aktiv (on/off) |
 | `sensor.ha_desklink_fullscreen` | Vollbild-Modus (on/off) |
 | `sensor.ha_desklink_brightness` | Bildschirmhelligkeit in % |
