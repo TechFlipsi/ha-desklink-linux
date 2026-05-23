@@ -100,6 +100,15 @@ public class SensorManager
         // App version
         sensors.Add(GetAppVersion());
 
+        // PC status (binary_sensor: "on" while app is running)
+        var pcStatus = new SensorData("pc_status", "PC Status", "on",
+            deviceClass: "connectivity", icon: "mdi:desktop-classic")
+        {
+            SensorKind = SensorType.BinarySensor,
+            EntityCategory = null
+        };
+        sensors.Add(pcStatus);
+
         return sensors;
     }
 

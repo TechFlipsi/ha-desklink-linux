@@ -1,4 +1,4 @@
-# HA DeskLink Linux v4.2
+# HA DeskLink Linux v4.3
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -31,6 +31,20 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 - 🔄 **Auto-Update** – checks for updates every 2 hours
 - 🐧 **Headless Daemon** – runs as systemd service in the background
 - 🛡️ **Downgrade Protection** – only upgrades, no older versions
+
+## MQTT (v4.3)
+
+HA DeskLink v4.3 brings **optional MQTT support** for advanced features:
+
+- 🔊 **Media Player Entity** – Your PC appears as a Media Player in Home Assistant with now-playing info, play/pause and volume control
+- 📡 **PC Status Binary Sensor** – Instant online/offline detection via Last Will Testament (LWT)
+- ⚡ **Commands to Sleeping PC** – MQTT commands reach the PC even in sleep mode
+- 🔍 **Automatic Device Discovery** – Media Player and PC Status appear automatically in HA
+- 🔒 **More Reliable Connection** – Auto-reconnect with exponential backoff
+- 🪄 **Zero-Config Setup** – On first launch, automatically detects Mosquitto and configures the connection
+- 🧭 **Smart Routing** – MQTT for sensors + commands, WebSocket stays for notifications
+
+MQTT is **optional** – HA DeskLink works without MQTT as usual.
 
 ## System Requirements
 - Linux (x64, ARM64)

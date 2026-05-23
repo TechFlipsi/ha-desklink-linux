@@ -47,6 +47,16 @@ public class Config
     /// </summary>
     public string? HaTokenEncrypted { get; set; }
 
+    // MQTT Configuration (optional, auto-configured)
+    public bool MqttEnabled { get; set; } = false;
+    public string MqttBroker { get; set; } = "";
+    public int MqttPort { get; set; } = 1883;
+    public string MqttUsername { get; set; } = "";
+    public string MqttPassword { get; set; } = "";           // runtime only, never saved to config file
+    public string MqttPasswordEncrypted { get; set; } = "";  // encrypted version for persistence
+    public bool MqttUseSsl { get; set; } = false;
+    public bool MqttAutoConfigured { get; set; } = false;    // set by auto-setup
+
     private string ConfigPath => Path.Combine(ConfigDir, "config.json");
 
     /// <summary>
@@ -212,6 +222,22 @@ public class Config
                 config.HaToken = decrypted;
         }
 
+        // Migration: if MqttPasswordEncrypted is empty but MqttPassword has a value,
+        // encrypt MqttPassword and clear the plaintext
+        if (string.IsNullOrEmpty(config.MqttPasswordEncrypted) && !string.IsNullOrEmpty(config.MqttPassword))
+        {
+            config.MqttPasswordEncrypted = EncryptString(config.MqttPassword);
+            config.MqttPassword = ""; // Clear plaintext
+            config.Save(); // Save encrypted version immediately
+        }
+        else if (!string.IsNullOrEmpty(config.MqttPasswordEncrypted))
+        {
+            // Decrypt the MQTT password for use in the app
+            var decrypted = DecryptString(config.MqttPasswordEncrypted);
+            if (!string.IsNullOrEmpty(decrypted))
+                config.MqttPassword = decrypted;
+        }
+
         return config;
     }
 
@@ -227,6 +253,11 @@ public class Config
             HaTokenEncrypted = EncryptString(HaToken);
         }
 
+        if (!string.IsNullOrEmpty(MqttPassword))
+        {
+            MqttPasswordEncrypted = EncryptString(MqttPassword);
+        }
+
         var saveConfig = new Config
         {
             HaUrl = HaUrl,
@@ -236,7 +267,15 @@ public class Config
             UpdateChannel = UpdateChannel,
             Language = Language,
             HaTokenEncrypted = HaTokenEncrypted,
-            QuickActions = QuickActions
+            QuickActions = QuickActions,
+            MqttEnabled = MqttEnabled,
+            MqttBroker = MqttBroker,
+            MqttPort = MqttPort,
+            MqttUsername = MqttUsername,
+            MqttPassword = "", // NEVER save plaintext password
+            MqttPasswordEncrypted = MqttPasswordEncrypted,
+            MqttUseSsl = MqttUseSsl,
+            MqttAutoConfigured = MqttAutoConfigured
         };
 
         var json = JsonSerializer.Serialize(saveConfig, new JsonSerializerOptions { WriteIndented = true });
