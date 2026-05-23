@@ -10,7 +10,7 @@
         <!-- Title -->
         <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,16">
             <TextBlock Text="🏠 HA DeskLink Linux" FontSize="22" FontWeight="Bold" />
-            <TextBlock Name="LblVersion" Text="v4.0.0" FontSize="12" Foreground="Gray" />
+            <TextBlock Name="LblVersion" Text="v4.0.1" FontSize="12" Foreground="Gray" />
         </StackPanel>
 
         <!-- Status -->
