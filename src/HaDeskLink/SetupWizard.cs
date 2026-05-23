@@ -23,6 +23,7 @@ public class SetupWizard
     public string HaUrl { get; private set; } = "";
     public string HaToken { get; private set; } = "";
     public bool VerifySsl { get; private set; } = false;
+    public bool MqttConfigured { get; private set; } = false;
 
     public async Task<bool> RunAsync()
     {
@@ -49,7 +50,7 @@ public class SetupWizard
             {
                 await api.RegisterAsync(HaUrl, HaToken);
                 Console.WriteLine("✓ Verbindung erfolgreich!");
-                return true;
+                break;
             }
             catch (Exception ex)
             {
@@ -85,6 +86,151 @@ public class SetupWizard
                     return false;
                 }
             }
+        }
+
+        // ── Step 2: MQTT Configuration ────────────────────────────────
+        return await RunMqttSetupAsync();
+    }
+
+    private async Task<bool> RunMqttSetupAsync()
+    {
+        Console.WriteLine("\n=== MQTT Setup ===\n");
+
+        Console.WriteLine("📡 MQTT-Funktionen:");
+        Console.WriteLine("  Mit MQTT:                          Ohne MQTT:");
+        Console.WriteLine("  ✓ PC Status                        ✓ PC Status");
+        Console.WriteLine("  ✓ Sensoren                         ✓ Sensoren");
+        Console.WriteLine("  ✓ Quick Actions                    ✓ Quick Actions");
+        Console.WriteLine("  ✓ Mediensteuerung (Echtzeit)       ✗ Mediensteuerung");
+        Console.WriteLine("  ✓ Schnelle Sensor-Updates          ✗ Schnelle Sensor-Updates");
+        Console.WriteLine();
+
+        Console.Write("MQTT nutzen? (j/n) [j]: ");
+        var useMqtt = Console.ReadLine()?.Trim().ToLowerInvariant();
+        if (useMqtt != "y" && useMqtt != "j" && useMqtt != "ja" && useMqtt != "yes" && !string.IsNullOrWhiteSpace(useMqtt))
+        {
+            Console.WriteLine("✓ Ohne MQTT fortfahren.");
+            MqttConfigured = false;
+            return true;
+        }
+
+        Console.WriteLine("\nVersuche MQTT-Broker automatisch zu konfigurieren...");
+
+        try
+        {
+            var result = await MqttSetupHelper.AutoConfigureAsync(HaUrl, HaToken);
+
+            if (result.Success)
+            {
+                var config = Config.Load();
+                config.MqttEnabled = true;
+                config.MqttBroker = result.BrokerHost ?? "";
+                config.MqttPort = result.BrokerPort;
+                config.MqttUsername = result.Username ?? "";
+                config.MqttPassword = result.Password ?? "";
+                config.MqttUseSsl = result.UseSsl;
+                config.MqttAutoConfigured = true;
+                config.Save();
+
+                Console.WriteLine($"✓ MQTT erfolgreich konfiguriert!");
+                Console.WriteLine($"  Broker: {result.BrokerHost}:{result.BrokerPort}");
+                MqttConfigured = true;
+                return true;
+            }
+            else if (result.MosquittoNotInstalled)
+            {
+                Console.WriteLine("⚠️ Mosquitto MQTT-Broker nicht gefunden.");
+                Console.WriteLine("   Installiere den Mosquitto Broker Add-on in Home Assistant:");
+                Console.WriteLine("   Einstellungen → Add-ons → Mosquitto Broker installieren & starten.");
+                Console.WriteLine();
+                Console.Write("Erneut prüfen? (j/n) [n]: ");
+                var retry = Console.ReadLine()?.Trim().ToLowerInvariant();
+                if (retry == "j" || retry == "y" || retry == "ja" || retry == "yes")
+                {
+                    return await RunMqttSetupAsync();
+                }
+                Console.WriteLine("✓ Ohne MQTT fortfahren.");
+                MqttConfigured = false;
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ Automatische Konfiguration fehlgeschlagen: {result.ErrorMessage ?? "Unbekannter Fehler"}");
+                Console.WriteLine("\nBitte MQTT-Daten manuell eingeben:");
+                return await RunManualMqttAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"✗ Fehler bei der MQTT-Konfiguration: {ex.Message}");
+            Console.Write("\nManuelle Konfiguration? (j/n) [j]: ");
+            var manual = Console.ReadLine()?.Trim().ToLowerInvariant();
+            if (manual != "n" && manual != "no")
+            {
+                return await RunManualMqttAsync();
+            }
+            Console.WriteLine("✓ Ohne MQTT fortfahren.");
+            MqttConfigured = false;
+            return true;
+        }
+    }
+
+    private async Task<bool> RunManualMqttAsync()
+    {
+        Console.Write("Broker Host (z.B. homeassistant.local): ");
+        var broker = Console.ReadLine()?.Trim() ?? "";
+        if (string.IsNullOrWhiteSpace(broker))
+        {
+            // Extract host from HA URL
+            try { broker = new Uri(HaUrl).Host; } catch { broker = "homeassistant.local"; }
+            Console.WriteLine($"  Verwende: {broker}");
+        }
+
+        Console.Write("Port [1883]: ");
+        var portStr = Console.ReadLine()?.Trim();
+        if (!int.TryParse(portStr, out var port) || port <= 0) port = 1883;
+
+        Console.Write("Benutzername (optional): ");
+        var username = Console.ReadLine()?.Trim() ?? "";
+
+        Console.Write("Passwort (optional): ");
+        var password = Console.ReadLine()?.Trim() ?? "";
+
+        Console.Write("SSL/TLS verwenden? (j/n) [n]: ");
+        var ssl = Console.ReadLine()?.Trim().ToLowerInvariant();
+        var useSsl = ssl == "j" || ssl == "y" || ssl == "ja" || ssl == "yes";
+
+        Console.WriteLine("\nTeste MQTT-Verbindung...");
+
+        var ok = await MqttSetupHelper.TestConnectionAsync(broker, port,
+            string.IsNullOrEmpty(username) ? null : username,
+            string.IsNullOrEmpty(password) ? null : password, useSsl);
+
+        if (ok)
+        {
+            var config = Config.Load();
+            config.MqttEnabled = true;
+            config.MqttBroker = broker;
+            config.MqttPort = port;
+            config.MqttUsername = username;
+            config.MqttPassword = password;
+            config.MqttUseSsl = useSsl;
+            config.MqttAutoConfigured = false;
+            config.Save();
+
+            Console.WriteLine($"✓ MQTT-Verbindung zu {broker}:{port} erfolgreich!");
+            MqttConfigured = true;
+            return true;
+        }
+        else
+        {
+            Console.WriteLine($"✗ Verbindung zu {broker}:{port} fehlgeschlagen!");
+            Console.Write("\nOhne MQTT fortfahren? (j/n) [j]: ");
+            var skip = Console.ReadLine()?.Trim().ToLowerInvariant();
+            if (skip == "n" || skip == "no") return false;
+            Console.WriteLine("✓ Ohne MQTT fortfahren.");
+            MqttConfigured = false;
+            return true;
         }
     }
 }

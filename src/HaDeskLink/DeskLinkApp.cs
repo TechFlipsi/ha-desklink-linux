@@ -31,6 +31,9 @@ public class DeskLinkApp : BackgroundService
     private SensorManager? _sensors;
     private HaWebSocketClient? _wsClient;
     private readonly Dictionary<string, object> _lastSensorStates = new();
+    private MqttClient? _mqttClient;
+    private MediaPlayer? _mediaPlayer;
+    private System.Threading.Timer? _mediaTimer;
 
     public DeskLinkApp(Config config, HaApiClient api)
     {
@@ -118,6 +121,49 @@ public class DeskLinkApp : BackgroundService
             verifySsl: _config.VerifySsl);
         _ = _wsClient.ConnectAsync();
 
+        // ── MQTT smart routing ──────────────────────────────────────
+        if (_config.MqttEnabled && !string.IsNullOrEmpty(_config.MqttBroker) && _config.MqttPort > 0)
+        {
+            var configDir = Config.GetConfigDir();
+            var mqttPassword = string.IsNullOrEmpty(_config.MqttPasswordEncrypted) ? _config.MqttPassword : _config.MqttPassword;
+            _mqttClient = new MqttClient(_config.MqttBroker, _config.MqttPort,
+                string.IsNullOrEmpty(_config.MqttUsername) ? null : _config.MqttUsername,
+                string.IsNullOrEmpty(mqttPassword) ? null : mqttPassword,
+                _config.MqttUseSsl, configDir, HaApiClient.GetVersion(),
+                onCommandReceived: cmd =>
+                {
+                    try { CommandHandler.Execute(cmd); }
+                    catch (Exception ex) { Console.WriteLine($"[MQTT Cmd] Error: {ex.Message}"); }
+                });
+            _ = MqttConnectAsync(stoppingToken);
+        }
+
+        // ── Media player state polling via MQTT ─────────────────────
+        try
+        {
+            _mediaPlayer = new MediaPlayer();
+            _mediaTimer = new System.Threading.Timer(async _ =>
+            {
+                try
+                {
+                    if (_mqttClient?.IsConnected == true)
+                    {
+                        var mediaState = _mediaPlayer.GetCurrentMediaState();
+                        var attrs = System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            title = mediaState.Title,
+                            artist = mediaState.Artist,
+                            album = mediaState.Album,
+                            source = mediaState.Source
+                        });
+                        await _mqttClient.PublishMediaStateAsync(mediaState.State, attrs);
+                    }
+                }
+                catch { }
+            }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+        }
+        catch { }
+
         // Check for updates
         _ = CheckForUpdatesAsync(stoppingToken);
 
@@ -140,7 +186,17 @@ public class DeskLinkApp : BackgroundService
                         }
                     }
                     if (changed.Count > 0)
+                    {
+                        // Always send via webhook (keeps mobile_app registration intact)
                         await _api.UpdateSensorStatesAsync(changed);
+
+                        // Smart routing: also publish via MQTT if connected
+                        if (_mqttClient?.IsConnected == true)
+                        {
+                            try { await _mqttClient.PublishSensorStatesAsync(changed); }
+                            catch (Exception ex) { Console.WriteLine($"[MQTT Sensor] Publish error: {ex.Message}"); }
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -187,7 +243,84 @@ public class DeskLinkApp : BackgroundService
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         Console.WriteLine("[HA DeskLink] Stopping...");
+        _mediaTimer?.Dispose();
+
+        // Send pc_status = "off" before shutting down
+        try
+        {
+            var pcOff = new SensorData("pc_status", "PC Status", "off",
+                deviceClass: "connectivity", icon: "mdi:desktop-classic")
+            {
+                SensorKind = SensorType.BinarySensor,
+                EntityCategory = null
+            };
+            await _api.UpdateSensorStatesAsync(new List<SensorData> { pcOff });
+        }
+        catch { }
+
+        // MQTT: publish pc_status OFF + disconnect
+        try
+        {
+            if (_mqttClient?.IsConnected == true)
+            {
+                var pcOff = new SensorData("pc_status", "PC Status", "off",
+                    deviceClass: "connectivity", icon: "mdi:desktop-classic")
+                {
+                    SensorKind = SensorType.BinarySensor
+                };
+                await _mqttClient.PublishSensorStateAsync(pcOff);
+                await _mqttClient.DisconnectAsync();
+                _mqttClient.Dispose();
+            }
+        }
+        catch { }
+
         _wsClient?.Dispose();
         await base.StopAsync(cancellationToken);
+    }
+
+    // ── MQTT Smart Routing ────────────────────────────────────────
+
+    /// <summary>
+    /// Connect to MQTT, publish discovery on connect, and handle reconnect with state republish.
+    /// </summary>
+    private async Task MqttConnectAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                if (_mqttClient != null)
+                {
+                    await _mqttClient.ConnectAsync();
+
+                    // Publish discovery for all sensors + media player on connect
+                    if (_mqttClient.IsConnected && _sensors != null)
+                    {
+                        try
+                        {
+                            await _mqttClient.PublishDiscoveryAsync(_sensors.CollectAll());
+                        }
+                        catch (Exception ex) { Console.WriteLine($"[MQTT] Discovery error: {ex.Message}"); }
+
+                        // Publish current states on connect
+                        try
+                        {
+                            await _mqttClient.PublishSensorStatesAsync(_sensors.CollectAll());
+                        }
+                        catch (Exception ex) { Console.WriteLine($"[MQTT] State publish error: {ex.Message}"); }
+                    }
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(5), ct);
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MQTT] Connect loop error: {ex.Message}");
+                try { await Task.Delay(TimeSpan.FromSeconds(30), ct); }
+                catch { break; }
+            }
+        }
     }
 }
