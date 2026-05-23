@@ -191,7 +191,7 @@ public class HaApiClient
     {
         var sensorDict = new Dictionary<string, object>
         {
-            ["type"] = "sensor",
+            ["type"] = sensor.Type,
             ["unique_id"] = sensor.UniqueId,
             ["name"] = sensor.Name,
             ["state"] = sensor.State,
@@ -214,7 +214,7 @@ public class HaApiClient
         {
             var entry = new Dictionary<string, object>
             {
-                ["type"] = "sensor",
+                ["type"] = s.Type,
                 ["unique_id"] = s.UniqueId,
                 ["state"] = s.State,
             };
