@@ -1,8 +1,7 @@
 # Changelog
 
 ## [v4.0.0] - 2026-05-23
-- 🆕 **Neu:** Embedded HA Dashboard mit WebView.Avalonia (WebKitGTK) + external_auth Auto-Login
-- 🆕 **Neu:** AuthGuard – IP-Ban-Schutz mit Rate-Limiting und Retry-Backoff
+- 🆕 **Neu:** Embedded HA Dashboard mit WebView.Avalonia (WebKitGTK) — einmaliges Login, Session bleibt erhalten
 - 🎨 **Redesign:** Moderne Notification-Popups (Dark Theme, abgerundete Ecken)
 - 🎨 **Redesign:** Modernisierte Einstellungen
 - 📊 **Sensoren:** `/sys/class/thermal` + `hwmon` + `lm-sensors` (treiberlos)

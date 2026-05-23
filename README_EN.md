@@ -20,8 +20,7 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 - 🌡️ **CPU & GPU Temperature** – via `/sys/class/thermal` and `hwmon`
 - 📊 **All Sensors** – CPU, RAM, all drives, Battery, Uptime, Network
 - 🖥️ **PC Commands from HA** – Shutdown, Restart, Hibernate, Suspend, Lock, Volume, Brightness
-- 🖥️ **Embedded Dashboard** – WebView.Avalonia shows HA dashboard in-app (with auto-login)
-- 🛡️ **AuthGuard** – IP-ban protection: rate limiting, exponential backoff, automatic lock pause
+- 🖥️ **Embedded Dashboard** – WebView.Avalonia shows HA dashboard in-app (login once, session persists)
 - 🖥️ **Graphical UI** – Avalonia UI dashboard with status, sensors & setup
 - 📬 **Push Notifications** – WebSocket-based, like the mobile app
 - 🔔 **Actionable Notifications** – Notifications with action buttons

@@ -69,17 +69,7 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrEmpty(_haUrl)) return;
 
-        var config = Config.Load();
-
-        if (!AuthGuard.ValidateTokenFormat(config.HaToken))
-        {
-            try { Process.Start(new ProcessStartInfo(_haUrl) { UseShellExecute = true }); }
-            catch { }
-            return;
-        }
-
-        var dashboard = new DashboardWindow(_haUrl, config.HaToken);
-        dashboard.Show();
+        DashboardWindow.Open(_haUrl);
     }
 
     private static void OpenUrl(string url)
