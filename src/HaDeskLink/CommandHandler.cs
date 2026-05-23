@@ -40,19 +40,47 @@ public static class CommandHandler
                     Run("systemctl", "hibernate");
                     break;
                 case "suspend":
+                case "sleep":
                     Run("systemctl", "suspend");
                     break;
                 case "lock":
-                    Run("loginctl", "lock-session");
+                case "lock_screen":
+                    // Primary: loginctl, fallback: xdg-screensaver
+                    if (!TryRun("loginctl", "lock-session"))
+                        TryRun("xdg-screensaver", "lock");
                     break;
                 case "mute":
                     Run("amixer", "set Master mute");
                     break;
+                case "volume_mute":
+                    // Primary: amixer toggle, fallback: pactl toggle
+                    if (!TryRun("amixer", "set Master toggle"))
+                        TryRun("pactl", "set-sink-mute @DEFAULT_SINK@ toggle");
+                    break;
                 case "volume_up":
-                    Run("amixer", "set Master 10%+");
+                    // Primary: amixer 5%+, fallback: pactl +5%
+                    if (!TryRun("amixer", "set Master 5%+"))
+                        TryRun("pactl", "set-sink-volume @DEFAULT_SINK@ +5%");
                     break;
                 case "volume_down":
-                    Run("amixer", "set Master 10%-");
+                    // Primary: amixer 5%-, fallback: pactl -5%
+                    if (!TryRun("amixer", "set Master 5%-"))
+                        TryRun("pactl", "set-sink-volume @DEFAULT_SINK@ -5%");
+                    break;
+                case "media_play_pause":
+                    // Primary: xdotool, fallback: playerctl
+                    if (!TryRun("xdotool", "key XF86AudioPlay"))
+                        TryRun("playerctl", "play-pause");
+                    break;
+                case "media_next":
+                    // Primary: xdotool, fallback: playerctl
+                    if (!TryRun("xdotool", "key XF86AudioNext"))
+                        TryRun("playerctl", "next");
+                    break;
+                case "media_previous":
+                    // Primary: xdotool, fallback: playerctl
+                    if (!TryRun("xdotool", "key XF86AudioPrev"))
+                        TryRun("playerctl", "previous");
                     break;
                 case "monitor_off":
                     Run("xset", "dpms force off");
@@ -107,6 +135,27 @@ public static class CommandHandler
             UseShellExecute = false
         };
         Process.Start(psi)?.WaitForExit(5000);
+    }
+
+    private static bool TryRun(string cmd, string args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = cmd,
+                Arguments = args,
+                CreateNoWindow = true,
+                UseShellExecute = false
+            };
+            using var proc = Process.Start(psi);
+            proc?.WaitForExit(5000);
+            return proc?.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static void TakeAndSaveScreenshot()
