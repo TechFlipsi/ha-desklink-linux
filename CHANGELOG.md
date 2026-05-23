@@ -1,11 +1,14 @@
 # Changelog
 
-## [v3.1.0] - 2026-05-23
-- 🌐 **Eingebettetes Dashboard:** NativeWebView zeigt HA direkt in der App (wie Handy-App!)
-- 🔑 **Auto-Login:** Long-Lived Access Token → automatischer Login via `external_auth` API
-- 🛡️ **IP-Ban-Schutz:** Rate-Limiting (max 3→5 Versuche), exponentielles Backoff, Token-Validierung
-- 🔄 **Intelligenter Fallback:** Kein Token → Browser; WebView fehlt → Browser; Token ungültig → Schutz
-- 📦 **Neue Dependency:** `Avalonia.Controls.WebView` (NativeWebView für Linux/macOS/Windows)
+## [v4.0.0] - 2026-05-23
+- 🆕 **Neu:** Embedded HA Dashboard mit WebView (Windows: WebView2, Linux: WebKitGTK) mit external_auth Auto-Login
+- 🆕 **Neu:** AuthGuard – IP-Ban-Schutz mit Rate-Limiting und Retry-Backoff
+- 🎨 **Redesign:** Moderne Notification-Popups (Dark Theme, abgerundete Ecken)
+- 🎨 **Redesign:** Modernisierte Einstellungen
+- ⚠️ **Breaking:** LibreHardwareMonitorLib + WinRing0 komplett entfernt → treiberloser Sensor-Stack
+- 🔒 **Security:** Keine Windows Defender "Vulnerable Driver" Warnung mehr
+- 📊 **Sensoren:** WMI + PerformanceCounter + nvidia-smi + AMD ADLX (treiberlos)
+
 
 ## [v3.0.7] - 2026-04-22
 - 📖 **Doku aktualisiert:** README, README_EN, MANUAL, COMPARISON auf v3.0-Stand
