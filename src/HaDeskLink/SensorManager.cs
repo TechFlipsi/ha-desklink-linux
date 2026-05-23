@@ -27,6 +27,11 @@ namespace HaDeskLink;
 /// </summary>
 public class SensorManager
 {
+    // Network throughput tracking
+    private static long _prevNetRxBytes = 0;
+    private static long _prevNetTxBytes = 0;
+    private static DateTime _prevNetTime = DateTime.MinValue;
+
     public List<SensorData> CollectAll()
     {
         var sensors = new List<SensorData>();
@@ -65,6 +70,32 @@ public class SensorManager
         // Webcam active sensor
         var webcam = GetWebcamActive();
         if (webcam != null) sensors.Add(webcam);
+
+        // Idle time
+        var idleTime = GetIdleTime();
+        if (idleTime != null) sensors.Add(idleTime);
+
+        // Active window
+        var activeWindow = GetActiveWindow();
+        if (activeWindow != null) sensors.Add(activeWindow);
+
+        // Audio volume
+        var audioVolume = GetAudioVolume();
+        if (audioVolume != null) sensors.Add(audioVolume);
+
+        // Audio mute
+        var audioMute = GetAudioMute();
+        if (audioMute != null) sensors.Add(audioMute);
+
+        // Microphone active
+        var micActive = GetMicActive();
+        if (micActive != null) sensors.Add(micActive);
+
+        // GPU sensors
+        sensors.AddRange(GetGpuSensors());
+
+        // Network throughput
+        sensors.AddRange(GetNetworkThroughput());
 
         // App version
         sensors.Add(GetAppVersion());
@@ -617,6 +648,383 @@ public class SensorManager
             return target?.FullName ?? "";
         }
         catch { return ""; }
+    }
+
+    // === Idle Time ===
+    private static SensorData? GetIdleTime()
+    {
+        try
+        {
+            // Primary: xprintidle (returns ms)
+            var psi = new ProcessStartInfo("xprintidle")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd().Trim();
+            proc?.WaitForExit(2000);
+
+            if (!string.IsNullOrEmpty(output) && double.TryParse(output, out var ms))
+                return new SensorData("idle_time", "Idle Time", Math.Round(ms / 1000.0, 1), "s",
+                    icon: "mdi:timer-outline", stateClass: "measurement");
+        }
+        catch { }
+
+        // Fallback: try xdotool (unreliable for idle, but available)
+        try
+        {
+            var psi = new ProcessStartInfo("xdotool", "getactivewindow")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            proc?.StandardOutput.ReadToEnd();
+            proc?.WaitForExit(2000);
+            // xdotool available but xprintidle wasn't; return 0
+            if (proc?.ExitCode == 0)
+                return new SensorData("idle_time", "Idle Time", 0.0, "s",
+                    icon: "mdi:timer-outline", stateClass: "measurement");
+        }
+        catch { }
+
+        return null;
+    }
+
+    // === Active Window ===
+    private static SensorData? GetActiveWindow()
+    {
+        try
+        {
+            // Primary: xdotool
+            var psi = new ProcessStartInfo("xdotool", "getwindowfocus getwindowname")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var title = proc?.StandardOutput.ReadToEnd().Trim();
+            proc?.WaitForExit(2000);
+
+            if (!string.IsNullOrEmpty(title))
+                return new SensorData("active_window", "Active Window", title,
+                    icon: "mdi:window-maximize");
+        }
+        catch { }
+
+        // Fallback: xprop
+        try
+        {
+            // Get active window ID
+            var psi1 = new ProcessStartInfo("xprop", "-root _NET_ACTIVE_WINDOW")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc1 = Process.Start(psi1);
+            var output1 = proc1?.StandardOutput.ReadToEnd().Trim() ?? "";
+            proc1?.WaitForExit(2000);
+
+            var match = Regex.Match(output1, @"window id # (0x[0-9a-fA-F]+)");
+            if (!match.Success) return null;
+            var windowId = match.Groups[1].Value;
+
+            var psi2 = new ProcessStartInfo("xprop", $"-id {windowId} _NET_WM_NAME")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc2 = Process.Start(psi2);
+            var output2 = proc2?.StandardOutput.ReadToEnd().Trim() ?? "";
+            proc2?.WaitForExit(2000);
+
+            var nameMatch = Regex.Match(output2, @"_NET_WM_NAME.* = ""(.+)""");
+            if (nameMatch.Success)
+                return new SensorData("active_window", "Active Window", nameMatch.Groups[1].Value,
+                    icon: "mdi:window-maximize");
+        }
+        catch { }
+
+        return null;
+    }
+
+    // === Audio Volume ===
+    private static SensorData? GetAudioVolume()
+    {
+        try
+        {
+            // Primary: amixer
+            var psi = new ProcessStartInfo("amixer", "get Master")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit(2000);
+
+            var match = Regex.Match(output, @"\[(\d+)%\]");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var vol))
+                return new SensorData("audio_volume", "Audio Volume", vol, "%",
+                    icon: "mdi:volume-high", stateClass: "measurement");
+        }
+        catch { }
+
+        // Fallback: pactl
+        try
+        {
+            var psi = new ProcessStartInfo("pactl", "get-sink-volume @DEFAULT_SINK@")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit(2000);
+
+            var match = Regex.Match(output, @"(\d+)%");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var vol))
+                return new SensorData("audio_volume", "Audio Volume", vol, "%",
+                    icon: "mdi:volume-high", stateClass: "measurement");
+        }
+        catch { }
+
+        return null;
+    }
+
+    // === Audio Mute ===
+    private static SensorData? GetAudioMute()
+    {
+        try
+        {
+            // Primary: amixer
+            var psi = new ProcessStartInfo("amixer", "get Master")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit(2000);
+
+            var isMuted = output.Contains("[off]");
+            return new SensorData("audio_mute", "Audio Mute", isMuted ? "on" : "off",
+                icon: "mdi:volume-off", deviceClass: "plug");
+        }
+        catch { }
+
+        // Fallback: pactl
+        try
+        {
+            var psi = new ProcessStartInfo("pactl", "get-sink-mute @DEFAULT_SINK@")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit(2000);
+
+            var isMuted = output.Contains("yes");
+            return new SensorData("audio_mute", "Audio Mute", isMuted ? "on" : "off",
+                icon: "mdi:volume-off", deviceClass: "plug");
+        }
+        catch { }
+
+        return null;
+    }
+
+    // === Microphone Active ===
+    private static SensorData? GetMicActive()
+    {
+        try
+        {
+            // Check /proc/asound for active capture streams
+            var statusFiles = Directory.GetFiles("/proc/asound", "status", SearchOption.AllDirectories);
+            foreach (var file in statusFiles)
+            {
+                try
+                {
+                    var content = File.ReadAllText(file);
+                    if (content.Contains("capture") && !content.Contains("closed"))
+                        return new SensorData("mic_active", "Microphone Active", "on",
+                            icon: "mdi:microphone", deviceClass: "plug");
+                }
+                catch { }
+            }
+        }
+        catch { }
+
+        // Fallback: pactl
+        try
+        {
+            var psi = new ProcessStartInfo("pactl", "list source-outputs")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd() ?? "";
+            proc?.WaitForExit(2000);
+
+            // If there are any source-outputs, something is recording
+            var hasOutputs = output.Contains("Source Output #");
+            return new SensorData("mic_active", "Microphone Active", hasOutputs ? "on" : "off",
+                icon: "mdi:microphone", deviceClass: "plug");
+        }
+        catch { }
+
+        return null;
+    }
+
+    // === GPU Sensors ===
+    private static List<SensorData> GetGpuSensors()
+    {
+        var result = new List<SensorData>();
+
+        // Try NVIDIA first
+        try
+        {
+            var psi = new ProcessStartInfo("nvidia-smi",
+                "--query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            var output = proc?.StandardOutput.ReadToEnd().Trim();
+            proc?.WaitForExit(3000);
+
+            if (!string.IsNullOrEmpty(output))
+            {
+                foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var parts = line.Trim().Split(',');
+                    if (parts.Length >= 3 &&
+                        double.TryParse(parts[0].Trim(), out var gpuLoad) &&
+                        double.TryParse(parts[1].Trim(), out var memUsed) &&
+                        double.TryParse(parts[2].Trim(), out var memTotal))
+                    {
+                        result.Add(new SensorData("gpu_load", "GPU Load", gpuLoad, "%",
+                            icon: "mdi:expansion-card", stateClass: "measurement"));
+                        result.Add(new SensorData("gpu_memory_used", "GPU Memory Used", Math.Round(memUsed, 1), "MB",
+                            icon: "mdi:memory", stateClass: "measurement"));
+                        result.Add(new SensorData("gpu_memory_total", "GPU Memory Total", Math.Round(memTotal, 1), "MB",
+                            icon: "mdi:memory"));
+                        return result;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // Try AMD
+        try
+        {
+            var drmPath = "/sys/class/drm";
+            if (Directory.Exists(drmPath))
+            {
+                foreach (var cardDir in Directory.GetDirectories(drmPath, "card*"))
+                {
+                    var devicePath = Path.Combine(cardDir, "device");
+                    if (!Directory.Exists(devicePath)) continue;
+
+                    var gpuBusyFile = Path.Combine(devicePath, "gpu_busy_percent");
+                    var memUsedFile = Path.Combine(devicePath, "mem_info_vram_used");
+                    var memTotalFile = Path.Combine(devicePath, "mem_info_vram_total");
+
+                    if (File.Exists(gpuBusyFile))
+                    {
+                        var gpuLoad = double.Parse(File.ReadAllText(gpuBusyFile).Trim());
+                        result.Add(new SensorData("gpu_load", "GPU Load", gpuLoad, "%",
+                            icon: "mdi:expansion-card", stateClass: "measurement"));
+                    }
+
+                    if (File.Exists(memUsedFile) && File.Exists(memTotalFile))
+                    {
+                        var memUsed = double.Parse(File.ReadAllText(memUsedFile).Trim()) / (1024.0 * 1024.0);
+                        var memTotal = double.Parse(File.ReadAllText(memTotalFile).Trim()) / (1024.0 * 1024.0);
+                        result.Add(new SensorData("gpu_memory_used", "GPU Memory Used", Math.Round(memUsed, 1), "MB",
+                            icon: "mdi:memory", stateClass: "measurement"));
+                        result.Add(new SensorData("gpu_memory_total", "GPU Memory Total", Math.Round(memTotal, 1), "MB",
+                            icon: "mdi:memory"));
+                    }
+
+                    if (result.Count > 0) return result;
+                }
+            }
+        }
+        catch { }
+
+        return result;
+    }
+
+    // === Network Throughput ===
+    private static List<SensorData> GetNetworkThroughput()
+    {
+        var result = new List<SensorData>();
+        try
+        {
+            var now = DateTime.UtcNow;
+            var netDev = File.ReadAllText("/proc/net/dev");
+            long totalRx = 0, totalTx = 0;
+
+            foreach (var line in netDev.Split('\n'))
+            {
+                var trimmed = line.Trim();
+                if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("Inter-") || trimmed.StartsWith("face"))
+                    continue;
+
+                // Skip loopback
+                if (trimmed.StartsWith("lo:")) continue;
+
+                var parts = Regex.Split(trimmed, @"\s+");
+                if (parts.Length >= 10)
+                {
+                    if (long.TryParse(parts[1], out var rx))
+                        totalRx += rx;
+                    if (long.TryParse(parts[9], out var tx))
+                        totalTx += tx;
+                }
+            }
+
+            if (_prevNetTime != DateTime.MinValue)
+            {
+                var elapsed = (now - _prevNetTime).TotalSeconds;
+                if (elapsed > 0)
+                {
+                    var rxDelta = (totalRx - _prevNetRxBytes) / elapsed / 1024.0;
+                    var txDelta = (totalTx - _prevNetTxBytes) / elapsed / 1024.0;
+
+                    result.Add(new SensorData("network_download", "Network Download",
+                        Math.Round(rxDelta, 2), "KB/s",
+                        icon: "mdi:download", stateClass: "measurement"));
+                    result.Add(new SensorData("network_upload", "Network Upload",
+                        Math.Round(txDelta, 2), "KB/s",
+                        icon: "mdi:upload", stateClass: "measurement"));
+                }
+            }
+
+            _prevNetRxBytes = totalRx;
+            _prevNetTxBytes = totalTx;
+            _prevNetTime = now;
+        }
+        catch { }
+
+        return result;
     }
 
     private static SensorData GetAppVersion()
