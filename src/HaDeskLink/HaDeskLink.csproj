@@ -5,7 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>ha-desklink</AssemblyName>
     <RootNamespace>HaDeskLink</RootNamespace>
-    <Version>4.3.0</Version>
+    <Version>4.4.0</Version>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
     <DefineConstants>LINUX</DefineConstants>
