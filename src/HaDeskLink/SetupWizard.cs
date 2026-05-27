@@ -89,10 +89,10 @@ public class SetupWizard
         }
 
         // ── Step 2: MQTT Configuration ────────────────────────────────
-        return await RunMqttSetupAsync();
+        return await RunManualMqttAsync();
     }
 
-    private async Task<bool> RunMqttSetupAsync()
+    private async Task<bool> RunManualMqttAsync()
     {
         Console.WriteLine("\n=== MQTT Setup ===\n");
 
@@ -114,70 +114,6 @@ public class SetupWizard
             return true;
         }
 
-        Console.WriteLine("\nVersuche MQTT-Broker automatisch zu konfigurieren...");
-
-        try
-        {
-            var config = Config.Load();
-            var fallbackHost = string.IsNullOrEmpty(config.MqttBrokerFallback) ? null : config.MqttBrokerFallback;
-            var result = await MqttSetupHelper.AutoConfigureAsync(HaUrl, HaToken, fallbackHost);
-
-            if (result.Success)
-            {
-                config.MqttEnabled = true;
-                config.MqttBroker = result.BrokerHost ?? "";
-                config.MqttPort = result.BrokerPort;
-                config.MqttUsername = result.Username ?? "";
-                config.MqttPassword = result.Password ?? "";
-                config.MqttUseSsl = result.UseSsl;
-                config.MqttAutoConfigured = true;
-                config.Save();
-
-                Console.WriteLine($"✓ MQTT erfolgreich konfiguriert!");
-                Console.WriteLine($"  Broker: {result.BrokerHost}:{result.BrokerPort}");
-                MqttConfigured = true;
-                return true;
-            }
-            else if (result.MosquittoNotInstalled)
-            {
-                Console.WriteLine("⚠️ Mosquitto MQTT-Broker nicht gefunden.");
-                Console.WriteLine("   Installiere den Mosquitto Broker Add-on in Home Assistant:");
-                Console.WriteLine("   Einstellungen → Add-ons → Mosquitto Broker installieren & starten.");
-                Console.WriteLine();
-                Console.Write("Erneut prüfen? (j/n) [n]: ");
-                var retry = Console.ReadLine()?.Trim().ToLowerInvariant();
-                if (retry == "j" || retry == "y" || retry == "ja" || retry == "yes")
-                {
-                    return await RunMqttSetupAsync();
-                }
-                Console.WriteLine("✓ Ohne MQTT fortfahren.");
-                MqttConfigured = false;
-                return true;
-            }
-            else
-            {
-                Console.WriteLine($"⚠️ Automatische Konfiguration fehlgeschlagen: {result.ErrorMessage ?? "Unbekannter Fehler"}");
-                Console.WriteLine("\nBitte MQTT-Daten manuell eingeben:");
-                return await RunManualMqttAsync();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"✗ Fehler bei der MQTT-Konfiguration: {ex.Message}");
-            Console.Write("\nManuelle Konfiguration? (j/n) [j]: ");
-            var manual = Console.ReadLine()?.Trim().ToLowerInvariant();
-            if (manual != "n" && manual != "no")
-            {
-                return await RunManualMqttAsync();
-            }
-            Console.WriteLine("✓ Ohne MQTT fortfahren.");
-            MqttConfigured = false;
-            return true;
-        }
-    }
-
-    private async Task<bool> RunManualMqttAsync()
-    {
         Console.Write("Broker Host (z.B. homeassistant.local): ");
         var broker = Console.ReadLine()?.Trim() ?? "";
         if (string.IsNullOrWhiteSpace(broker))
