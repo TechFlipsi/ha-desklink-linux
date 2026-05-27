@@ -183,13 +183,13 @@ public class NotificationPopup : Window
         }
     }
 
-    public void PositionTopRight(double offsetX = 20, double offsetY = 20)
+    public void PositionBottomLeft(double offsetX = 20, double offsetY = 20)
     {
         var screen = Screens.ScreenFromWindow(this) ?? Screens.All.FirstOrDefault();
         if (screen != null)
         {
             var wa = screen.WorkingArea;
-            Position = new PixelPoint(wa.X + wa.Width - (int)Width - (int)offsetX - 16, wa.Y + (int)offsetY);
+            Position = new PixelPoint(wa.X + (int)offsetX, wa.Y + wa.Height - (int)Height - (int)offsetY - 16);
         }
     }
 
@@ -216,7 +216,7 @@ public class NotificationPopup : Window
     {
         var popup = new NotificationPopup(title, message, actions);
         popup.Show();
-        popup.PositionTopRight();
+        popup.PositionBottomLeft();
         return popup;
     }
 
@@ -227,7 +227,7 @@ public class NotificationPopup : Window
     {
         var popup = new NotificationPopup(title, message, null, AccentGreenBrush);
         popup.Show();
-        popup.PositionTopRight();
+        popup.PositionBottomLeft();
         return popup;
     }
 }
