@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -283,10 +284,37 @@ public class HaApiClient
         await _http.PostAsync(WebhookUrl, new StringContent(payload, Encoding.UTF8, "application/json"));
     }
 
+    // Update loop protection: cooldown + duplicate check
+    private static string? _lastOfferedVersion = null;
+    private static DateTime _lastCheckTime = DateTime.MinValue;
+    private static readonly TimeSpan _checkCooldown = TimeSpan.FromHours(1);
+
     public async Task<string?> CheckForUpdateAsync(bool includePrerelease = false)
     {
         try
         {
+            // Update loop protection: cooldown between checks
+            if (DateTime.Now - _lastCheckTime < _checkCooldown && _lastOfferedVersion != null)
+                return null;
+
+            // Update loop protection: check if an update is already pending
+            try
+            {
+                var pendingFile = Path.Combine(_configDir, ".update_pending");
+                if (File.Exists(pendingFile))
+                {
+                    var pendingVer = File.ReadAllText(pendingFile).Trim();
+                    if (!string.IsNullOrEmpty(pendingVer))
+                    {
+                        var pendingVersion = ParseVersion(pendingVer);
+                        var installedVer = ParseVersion(GetVersion());
+                        if (pendingVersion.CompareTo(installedVer) >= 0)
+                            return null;
+                    }
+                }
+            }
+            catch { }
+
             using var ghClient = new HttpClient();
             ghClient.DefaultRequestHeaders.Add("User-Agent", "HA-DeskLink-Linux");
             var resp = await ghClient.GetAsync("https://api.github.com/repos/TechFlipsi/ha-desklink-linux/releases");
@@ -295,6 +323,7 @@ public class HaApiClient
             var currentVersion = GetVersion();
 
             string? bestUrl = null;
+            string? bestTag = null;
             Version? bestVersion = null;
             var currentVer = ParseVersion(currentVersion);
 
@@ -312,6 +341,7 @@ public class HaApiClient
                 if (bestVersion == null || releaseVer.CompareTo(bestVersion) > 0)
                 {
                     bestVersion = releaseVer;
+                    bestTag = tagName;
                     foreach (var asset in release.GetProperty("assets").EnumerateArray())
                     {
                         var name = asset.GetProperty("name").GetString() ?? "";
@@ -320,6 +350,17 @@ public class HaApiClient
                     }
                 }
             }
+
+            // Update loop protection: skip if we already offered this exact version
+            if (bestTag != null && bestTag == _lastOfferedVersion)
+                return null;
+
+            if (bestTag != null)
+            {
+                _lastOfferedVersion = bestTag;
+                _lastCheckTime = DateTime.Now;
+            }
+
             return bestUrl;
         }
         catch { }
@@ -392,7 +433,21 @@ public class HaApiClient
         try
         {
             var vfile = Path.Combine(AppContext.BaseDirectory, "VERSION");
-            if (File.Exists(vfile)) return File.ReadAllText(vfile).Trim();
+            if (File.Exists(vfile))
+            {
+                var content = File.ReadAllText(vfile).Trim();
+                if (!string.IsNullOrEmpty(content) && content.Length >= 5)
+                    return content;
+            }
+
+            // Fall back to assembly version
+            try
+            {
+                var ver = Assembly.GetExecutingAssembly().GetName().Version;
+                if (ver != null)
+                    return $"{ver.Major}.{ver.Minor}.{ver.Build}";
+            }
+            catch { }
         }
         catch { }
         return "4.4.0";

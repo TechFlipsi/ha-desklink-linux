@@ -44,6 +44,9 @@ public class DeskLinkApp : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Clean up stale update pending marker
+        try { File.Delete(Path.Combine(Config.GetConfigDir(), ".update_pending")); } catch { }
+
         Console.WriteLine($"[HA DeskLink] v{HaApiClient.GetVersion()} starting...");
 
         if (!_api.LoadRegistration())
