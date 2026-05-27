@@ -57,9 +57,6 @@ public partial class MainWindow : Window
         if (btnGitHub != null) btnGitHub.Click += (s, e) => OpenUrl("https://github.com/TechFlipsi/ha-desklink-linux");
 
         // MQTT settings buttons
-        var btnMqttAuto = this.FindControl<Button>("BtnMqttAutoConfigure");
-        if (btnMqttAuto != null) btnMqttAuto.Click += OnMqttAutoConfigure;
-
         _btnMqttTest = this.FindControl<Button>("BtnMqttTest");
         if (_btnMqttTest != null) _btnMqttTest.Click += OnMqttTestConnection;
 
@@ -106,67 +103,6 @@ public partial class MainWindow : Window
                 lblStatus.Text = $"● Verbunden ({config.MqttBroker}:{config.MqttPort})";
             else
                 lblStatus.Text = "● Getrennt";
-        }
-    }
-
-    private async void OnMqttAutoConfigure(object? sender, RoutedEventArgs e)
-    {
-        var btn = sender as Button;
-        var lblStatus = this.FindControl<TextBlock>("LblMqttStatus");
-        if (btn != null) btn.IsEnabled = false;
-        if (lblStatus != null) lblStatus.Text = "⏳ Verbinde...";
-
-        try
-        {
-            var config = Config.Load();
-            var fallbackHost = _mqttFallbackBox?.Text?.Trim();
-            fallbackHost = string.IsNullOrEmpty(fallbackHost) ? null : fallbackHost;
-            var result = await MqttSetupHelper.AutoConfigureAsync(config.HaUrl, config.HaToken, fallbackHost);
-
-            if (result.Success)
-            {
-                var chkMqtt = this.FindControl<CheckBox>("ChkMqttEnabled");
-                var txtBroker = this.FindControl<TextBox>("TxtMqttBroker");
-                var txtPort = this.FindControl<TextBox>("TxtMqttPort");
-                var txtUser = this.FindControl<TextBox>("TxtMqttUser");
-                var txtPass = this.FindControl<TextBox>("TxtMqttPass");
-                var chkSsl = this.FindControl<CheckBox>("ChkMqttSsl");
-
-                if (chkMqtt != null) chkMqtt.IsChecked = true;
-                if (txtBroker != null) txtBroker.Text = result.BrokerHost ?? "";
-                if (txtPort != null) txtPort.Text = result.BrokerPort.ToString();
-                if (txtUser != null) txtUser.Text = result.Username ?? "";
-                if (txtPass != null) txtPass.Text = result.Password ?? "";
-                if (chkSsl != null) chkSsl.IsChecked = result.UseSsl;
-
-                config.MqttEnabled = true;
-                config.MqttBroker = result.BrokerHost ?? "";
-                config.MqttPort = result.BrokerPort;
-                config.MqttUsername = result.Username ?? "";
-                config.MqttPassword = result.Password ?? "";
-                config.MqttUseSsl = result.UseSsl;
-                config.MqttBrokerFallback = _mqttFallbackBox?.Text?.Trim() ?? "";
-                config.MqttAutoConfigured = true;
-                config.Save();
-
-                if (lblStatus != null) lblStatus.Text = $"✓ MQTT konfiguriert ({result.BrokerHost}:{result.BrokerPort})";
-            }
-            else if (result.MosquittoNotInstalled)
-            {
-                if (lblStatus != null) lblStatus.Text = "⚠️ Mosquitto nicht gefunden. Bitte in HA installieren.";
-            }
-            else
-            {
-                if (lblStatus != null) lblStatus.Text = $"⚠️ Fehler: {result.ErrorMessage ?? "Unbekannt"}";
-            }
-        }
-        catch (Exception ex)
-        {
-            if (lblStatus != null) lblStatus.Text = $"✗ Fehler: {ex.Message}";
-        }
-        finally
-        {
-            if (btn != null) btn.IsEnabled = true;
         }
     }
 
@@ -602,57 +538,28 @@ public partial class MainWindow : Window
 
                     if (mqttUseBtn != null && mqttSkipBtn != null && mqttStatus != null)
                     {
-                        mqttUseBtn.Click += async (s2, args2) =>
+                        mqttUseBtn.Click += (s2, args2) =>
                         {
-                            mqttUseBtn.IsEnabled = false;
-                            mqttUseBtn.Content = "Konfiguriere…";
-                            mqttStatus.Text = "Verbinde mit MQTT-Broker…";
-                            mqttStatus.Foreground = grayBrush;
+                            // Configure MQTT using the HA host as broker
+                            var host = new Uri(savedFullUrl).Host;
+                            config.MqttEnabled = true;
+                            config.MqttBroker = host;
+                            config.MqttPort = 1883;
+                            config.MqttUsername = "";
+                            config.MqttPassword = "";
+                            config.MqttUseSsl = false;
+                            config.MqttAutoConfigured = false;
+                            config.Save();
 
-                            try
+                            mqttStatus.Text = $"✓ MQTT manuell konfiguriert: {host}:1883";
+                            mqttStatus.Foreground = successBrush;
+                            mqttUseBtn.Content = "✓ MQTT konfiguriert";
+                            mqttUseBtn.Background = successBrush;
+
+                            Task.Delay(1500).ContinueWith(_ =>
                             {
-                                var result = await MqttSetupHelper.AutoConfigureAsync(savedFullUrl, savedToken);
-                                if (result.Success)
-                                {
-                                    config.MqttEnabled = true;
-                                    config.MqttBroker = result.BrokerHost ?? "";
-                                    config.MqttPort = result.BrokerPort;
-                                    config.MqttUsername = result.Username ?? "";
-                                    config.MqttPassword = result.Password ?? "";
-                                    config.MqttUseSsl = result.UseSsl;
-                                    config.MqttAutoConfigured = true;
-                                    config.Save();
-
-                                    mqttStatus.Text = $"✓ MQTT konfiguriert: {result.BrokerHost}:{result.BrokerPort}";
-                                    mqttStatus.Foreground = successBrush;
-                                    mqttUseBtn.Content = "✓ MQTT konfiguriert";
-                                    mqttUseBtn.Background = successBrush;
-
-                                    await Task.Delay(1500);
-                                    dialog.Close();
-                                }
-                                else if (result.MosquittoNotInstalled)
-                                {
-                                    mqttStatus.Text = "⚠️ Mosquitto nicht gefunden. Bitte in HA installieren (Add-ons → Mosquitto).\nKlicke 'Erneut prüfen' nach der Installation.";
-                                    mqttStatus.Foreground = highlightBrush;
-                                    mqttUseBtn.IsEnabled = true;
-                                    mqttUseBtn.Content = "Erneut prüfen";
-                                }
-                                else
-                                {
-                                    mqttStatus.Text = $"⚠️ Fehler: {result.ErrorMessage ?? "Unbekannt"}";
-                                    mqttStatus.Foreground = highlightBrush;
-                                    mqttUseBtn.IsEnabled = true;
-                                    mqttUseBtn.Content = "Erneut prüfen";
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                mqttStatus.Text = $"✗ Fehler: {ex.Message}";
-                                mqttStatus.Foreground = highlightBrush;
-                                mqttUseBtn.IsEnabled = true;
-                                mqttUseBtn.Content = "Erneut prüfen";
-                            }
+                                Avalonia.Threading.Dispatcher.UIThread.Post(() => dialog.Close());
+                            });
                         };
 
                         mqttSkipBtn.Click += (s2, args2) =>

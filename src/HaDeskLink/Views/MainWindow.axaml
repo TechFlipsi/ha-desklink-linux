@@ -49,7 +49,6 @@
                 </Grid>
                 <CheckBox Name="ChkMqttSsl" Content="SSL/TLS verwenden" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Name="BtnMqttAutoConfigure" Content="🔧 Auto-Konfiguration" ToolTip.Tip="MQTT-Broker automatisch über HA REST API konfigurieren" />
                     <Button Name="BtnMqttTest" Content="🔌 Verbindung testen" ToolTip.Tip="MQTT-Verbindung mit den aktuellen Einstellungen testen" />
                     <Button Name="BtnMqttSave" Content="💾 Speichern" ToolTip.Tip="MQTT-Einstellungen speichern" />
                 </StackPanel>

@@ -137,6 +137,19 @@ public class DeskLinkApp : BackgroundService
                 {
                     try { CommandHandler.Execute(cmd); }
                     catch (Exception ex) { Console.WriteLine($"[MQTT Cmd] Error: {ex.Message}"); }
+                },
+                onConnectedCallback: () =>
+                {
+                    if (_sensors != null)
+                    {
+                        Task.Run(async () =>
+                        {
+                            try { await _mqttClient!.PublishDiscoveryAsync(_sensors.CollectAll()); }
+                            catch (Exception ex) { Console.WriteLine($"[MQTT] Discovery error: {ex.Message}"); }
+                            try { await _mqttClient!.PublishSensorStatesAsync(_sensors.CollectAll()); }
+                            catch (Exception ex) { Console.WriteLine($"[MQTT] State error: {ex.Message}"); }
+                        });
+                    }
                 });
             _ = MqttConnectAsync(stoppingToken);
         }
@@ -286,44 +299,18 @@ public class DeskLinkApp : BackgroundService
 
     /// <summary>
     /// Connect to MQTT, publish discovery on connect, and handle reconnect with state republish.
+    /// Runs in a loop that monitors connection state and republishes on reconnect.
     /// </summary>
     private async Task MqttConnectAsync(CancellationToken ct)
     {
-        while (!ct.IsCancellationRequested)
+        try
         {
-            try
-            {
-                if (_mqttClient != null)
-                {
-                    await _mqttClient.ConnectAsync();
-
-                    // Publish discovery for all sensors + media player on connect
-                    if (_mqttClient.IsConnected && _sensors != null)
-                    {
-                        try
-                        {
-                            await _mqttClient.PublishDiscoveryAsync(_sensors.CollectAll());
-                        }
-                        catch (Exception ex) { Console.WriteLine($"[MQTT] Discovery error: {ex.Message}"); }
-
-                        // Publish current states on connect
-                        try
-                        {
-                            await _mqttClient.PublishSensorStatesAsync(_sensors.CollectAll());
-                        }
-                        catch (Exception ex) { Console.WriteLine($"[MQTT] State publish error: {ex.Message}"); }
-                    }
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(5), ct);
-            }
-            catch (OperationCanceledException) { break; }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[MQTT] Connect loop error: {ex.Message}");
-                try { await Task.Delay(TimeSpan.FromSeconds(30), ct); }
-                catch { break; }
-            }
+            await _mqttClient!.ConnectAsync();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MQTT] Connect error: {ex.Message}");
         }
     }
 }
