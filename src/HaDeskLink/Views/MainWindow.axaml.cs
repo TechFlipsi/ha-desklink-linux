@@ -21,6 +21,8 @@ public partial class MainWindow : Window
 {
     private string _haUrl = "";
     private TextBlock? _statusLabel;
+    private TextBox? _mqttFallbackBox;
+    private Button? _btnMqttTest;
 
     public string HaUrl
     {
@@ -58,6 +60,11 @@ public partial class MainWindow : Window
         var btnMqttAuto = this.FindControl<Button>("BtnMqttAutoConfigure");
         if (btnMqttAuto != null) btnMqttAuto.Click += OnMqttAutoConfigure;
 
+        _btnMqttTest = this.FindControl<Button>("BtnMqttTest");
+        if (_btnMqttTest != null) _btnMqttTest.Click += OnMqttTestConnection;
+
+        _mqttFallbackBox = this.FindControl<TextBox>("TxtMqttFallback");
+
         var btnMqttSave = this.FindControl<Button>("BtnMqttSave");
         if (btnMqttSave != null) btnMqttSave.Click += OnMqttSave;
 
@@ -89,6 +96,7 @@ public partial class MainWindow : Window
         if (txtUser != null) txtUser.Text = config.MqttUsername;
         if (txtPass != null) txtPass.Text = config.MqttPassword;
         if (chkSsl != null) chkSsl.IsChecked = config.MqttUseSsl;
+        if (_mqttFallbackBox != null) _mqttFallbackBox.Text = config.MqttBrokerFallback;
 
         if (lblStatus != null)
         {
@@ -111,7 +119,9 @@ public partial class MainWindow : Window
         try
         {
             var config = Config.Load();
-            var result = await MqttSetupHelper.AutoConfigureAsync(config.HaUrl, config.HaToken);
+            var fallbackHost = _mqttFallbackBox?.Text?.Trim();
+            fallbackHost = string.IsNullOrEmpty(fallbackHost) ? null : fallbackHost;
+            var result = await MqttSetupHelper.AutoConfigureAsync(config.HaUrl, config.HaToken, fallbackHost);
 
             if (result.Success)
             {
@@ -135,6 +145,7 @@ public partial class MainWindow : Window
                 config.MqttUsername = result.Username ?? "";
                 config.MqttPassword = result.Password ?? "";
                 config.MqttUseSsl = result.UseSsl;
+                config.MqttBrokerFallback = _mqttFallbackBox?.Text?.Trim() ?? "";
                 config.MqttAutoConfigured = true;
                 config.Save();
 
@@ -178,10 +189,58 @@ public partial class MainWindow : Window
         config.MqttUsername = txtUser?.Text?.Trim() ?? "";
         config.MqttPassword = txtPass?.Text ?? "";
         config.MqttUseSsl = chkSsl?.IsChecked ?? false;
+        config.MqttBrokerFallback = _mqttFallbackBox?.Text?.Trim() ?? "";
         config.MqttAutoConfigured = false;
         config.Save();
 
         if (lblStatus != null) lblStatus.Text = "✓ MQTT-Einstellungen gespeichert";
+    }
+
+    private async void OnMqttTestConnection(object? sender, RoutedEventArgs e)
+    {
+        var btn = sender as Button;
+        var lblStatus = this.FindControl<TextBlock>("LblMqttStatus");
+        if (btn != null) btn.IsEnabled = false;
+        if (lblStatus != null) lblStatus.Text = "⏳ Teste MQTT-Verbindung...";
+
+        try
+        {
+            var txtBroker = this.FindControl<TextBox>("TxtMqttBroker");
+            var txtPort = this.FindControl<TextBox>("TxtMqttPort");
+            var txtUser = this.FindControl<TextBox>("TxtMqttUser");
+            var txtPass = this.FindControl<TextBox>("TxtMqttPass");
+            var chkSsl = this.FindControl<CheckBox>("ChkMqttSsl");
+
+            var broker = txtBroker?.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(broker))
+            {
+                if (lblStatus != null) lblStatus.Text = "⚠️ Bitte Broker-Adresse eingeben";
+                if (btn != null) btn.IsEnabled = true;
+                return;
+            }
+
+            if (!int.TryParse(txtPort?.Text?.Trim(), out var port) || port <= 0)
+                port = 1883;
+
+            var user = string.IsNullOrEmpty(txtUser?.Text?.Trim()) ? null : txtUser.Text.Trim();
+            var pass = string.IsNullOrEmpty(txtPass?.Text) ? null : txtPass.Text;
+            var ssl = chkSsl?.IsChecked ?? false;
+
+            var ok = await MqttSetupHelper.TestConnectionAsync(broker, port, user, pass, ssl);
+
+            if (ok)
+                lblStatus.Text = $"✓ MQTT-Verbindung erfolgreich ({broker}:{port})";
+            else
+                lblStatus.Text = $"✗ Verbindung zu {broker}:{port} fehlgeschlagen";
+        }
+        catch (Exception ex)
+        {
+            if (lblStatus != null) lblStatus.Text = $"✗ Fehler: {ex.Message}";
+        }
+        finally
+        {
+            if (btn != null) btn.IsEnabled = true;
+        }
     }
 
     private void OnOpenDashboard(object? sender, RoutedEventArgs e)
