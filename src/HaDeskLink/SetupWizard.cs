@@ -118,11 +118,12 @@ public class SetupWizard
 
         try
         {
-            var result = await MqttSetupHelper.AutoConfigureAsync(HaUrl, HaToken);
+            var config = Config.Load();
+            var fallbackHost = string.IsNullOrEmpty(config.MqttBrokerFallback) ? null : config.MqttBrokerFallback;
+            var result = await MqttSetupHelper.AutoConfigureAsync(HaUrl, HaToken, fallbackHost);
 
             if (result.Success)
             {
-                var config = Config.Load();
                 config.MqttEnabled = true;
                 config.MqttBroker = result.BrokerHost ?? "";
                 config.MqttPort = result.BrokerPort;
