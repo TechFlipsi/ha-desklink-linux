@@ -13,10 +13,10 @@ Die Architektur, Implementierung und das Debugging wurden maßgeblich durch KI-U
 
 ## Verwendete KI-Modelle
 
-| Modell | Rolle | Aufgaben |
-|---|---|---|
-| **GLM-5.1** | Hauptmodell | Architektur, Code, Debugging |
-| **MiniMax M3** | Sub-Agenten | Tests, Audits |
+| Modell | Rolle |
+|---|---|
+| **GLM-5.1** | Hauptmodell |
+| **DeepSeek V4 Pro** | Sub-Agenten |
 
 ## Dokumentation
 - **Deutsch** (Original): Fabian Kirchweger & KI-Modelle
