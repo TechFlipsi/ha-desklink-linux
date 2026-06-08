@@ -176,4 +176,4 @@ Es gibt jetzt eine macOS-Version von HA DeskLink! 🎉 Siehe [ha-desklink-mac](h
 💬 [Discord](https://discord.gg/7G2SqpXpsC) – Fragen, Feedback, Hilfe
 
 ## Erstellung
-Dieses Projekt wurde unter Verwendung von KI-Unterstützung erstellt. Die Entwicklung erfolgte durch **J.A.R.V.I.S. (Hermes Agent)**. Als Hauptmodell kam **GLM-5.1** zum Einsatz (Architektur, Code, Debugging); **MiniMax M3** wurde für Sub-Agenten-Aufgaben wie Tests und Audits verwendet. Die englische Dokumentation wurde ebenfalls von der KI aus dem Deutschen ins Englische übersetzt. Die deutsche Dokumentation ist die Originalversion. Details siehe [CREDITS.md](CREDITS.md).
+Dieses Projekt wurde unter Verwendung von KI-Unterstützung erstellt. Die Entwicklung erfolgte durch **J.A.R.V.I.S. (Hermes Agent)**. Als Hauptmodell kam **GLM-5.1** zum Einsatz (Architektur, Code, Debugging); **DeepSeek V4 Pro** wurde für Sub-Agenten-Aufgaben wie Tests und Audits verwendet. Die englische Dokumentation wurde ebenfalls von der KI aus dem Deutschen ins Englische übersetzt. Die deutsche Dokumentation ist die Originalversion. Details siehe [CREDITS.md](CREDITS.md).
