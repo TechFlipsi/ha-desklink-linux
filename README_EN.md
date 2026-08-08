@@ -4,7 +4,7 @@
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
 [![License](https://img.shields.io/github/license/TechFlipsi/ha-desklink-linux?label=License)](https://github.com/TechFlipsi/ha-desklink-linux/LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/TechFlipsi/ha-desklink-linux/total?label=Downloads)](https://github.com/TechFlipsi/ha-desklink-linux/releases)
-[![Discord](https://img.shields.io/discord/1496261911677894867?label=Discord)](https://discord.gg/7G2SqpXpsC)
+[![Discord](https://img.shields.io/discord/1496261911677894867?label=Discord)](https://discord.com/invite/zHPhQ7EaqH)
 
 ⚠️ **PRE-RELEASE / BETA** – This version has not been tested on a real Linux system yet. Use at your own risk!
 
@@ -173,7 +173,7 @@ See [ha-desklink-dotnet](https://github.com/TechFlipsi/ha-desklink-dotnet) for t
 See [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ Community Test Version.
 
 ## Community
-💬 [Discord](https://discord.gg/7G2SqpXpsC) – Questions, Feedback, Help
+💬 [Discord](https://discord.com/invite/zHPhQ7EaqH) – Questions, Feedback, Help
 
 ## Attribution
 This project was created with AI assistance. All code was written and developed by **GLM-5.1** (via OpenClaw) – from architecture to implementation to debugging. The English documentation was translated from German by AI. The German documentation is the original version.
