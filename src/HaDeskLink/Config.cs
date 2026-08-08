@@ -62,6 +62,19 @@ public class Config
     /// </summary>
     public string MqttBrokerFallback { get; set; } = "";
 
+    /// <summary>
+    /// Custom Commands: JSON-Array von benutzerdefinierten Skripten/Befehlen
+    /// die von Home Assistant getriggert werden können.
+    /// Format: [{"command":"start_streaming","script":"/usr/local/bin/stream.sh","name":"Start Streaming"}]
+    /// </summary>
+    public string CustomCommands { get; set; } = "[]";
+
+    /// <summary>
+    /// App Launchers: JSON-Array von Apps die von HA gestartet werden können.
+    /// Format: [{"command":"launch_spotify","path":"spotify","name":"Spotify"}]
+    /// </summary>
+    public string AppLaunchers { get; set; } = "[]";
+
     private string ConfigPath => Path.Combine(ConfigDir, "config.json");
 
     /// <summary>
@@ -281,7 +294,9 @@ public class Config
             MqttPasswordEncrypted = MqttPasswordEncrypted,
             MqttUseSsl = MqttUseSsl,
             MqttAutoConfigured = MqttAutoConfigured,
-            MqttBrokerFallback = MqttBrokerFallback
+            MqttBrokerFallback = MqttBrokerFallback,
+            CustomCommands = CustomCommands,
+            AppLaunchers = AppLaunchers
         };
 
         var json = JsonSerializer.Serialize(saveConfig, new JsonSerializerOptions { WriteIndented = true });

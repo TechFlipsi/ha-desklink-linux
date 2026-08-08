@@ -98,7 +98,7 @@ public class HaWebSocketClient : IDisposable
                     var authDoc = JsonDocument.Parse(authMsg);
                     authType = authDoc.RootElement.GetProperty("type").GetString() ?? "";
                 }
-                catch { }
+                catch (Exception ex) { Console.WriteLine($"[WebSocket] Auth parse error: {ex.Message}"); }
 
                 var authPayload = JsonSerializer.Serialize(new { type = "auth", access_token = _token });
                 var authBytes = Encoding.UTF8.GetBytes(authPayload);
@@ -125,7 +125,7 @@ public class HaWebSocketClient : IDisposable
                         continue;
                     }
                 }
-                catch { }
+                catch (Exception ex) { Console.WriteLine($"[WebSocket] Auth response parse error: {ex.Message}"); }
 
                 // Reset failure counter on successful auth
                 _consecutiveFailures = 0;
@@ -278,7 +278,7 @@ public class HaWebSocketClient : IDisposable
                 _onNotification?.Invoke($"{title}\n{text}");
             }
         }
-        catch { }
+        catch (Exception ex) { Console.WriteLine($"[WebSocket] Connection error: {ex.Message}"); }
     }
 
     public void Dispose()

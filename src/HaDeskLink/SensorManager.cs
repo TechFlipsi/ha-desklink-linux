@@ -75,6 +75,10 @@ public class SensorManager
         var idleTime = GetIdleTime();
         if (idleTime != null) sensors.Add(idleTime);
 
+        // Presence Detection (binary_sensor: on wenn idle_time < 300s UND connectivity = on)
+        var presence = GetPresence();
+        if (presence != null) sensors.Add(presence);
+
         // Active window
         var activeWindow = GetActiveWindow();
         if (activeWindow != null) sensors.Add(activeWindow);
@@ -96,6 +100,10 @@ public class SensorManager
 
         // Network throughput
         sensors.AddRange(GetNetworkThroughput());
+
+        // Bluetooth devices connected (Anzahl verbundener Geräte)
+        var bluetooth = GetBluetoothDevices();
+        if (bluetooth != null) sensors.Add(bluetooth);
 
         // App version
         sensors.Add(GetAppVersion());
@@ -218,8 +226,20 @@ public class SensorManager
     {
         try
         {
+            // Ping HA URL host instead of hardcoded 8.8.8.8 — works in isolated networks
+            var pingHost = "8.8.8.8";
+            try
+            {
+                var config = Config.Load();
+                if (!string.IsNullOrEmpty(config.HaUrl) && Uri.TryCreate(config.HaUrl, UriKind.Absolute, out var haUri))
+                {
+                    pingHost = haUri.Host;
+                }
+            }
+            catch { }
+
             using var ping = new Ping();
-            var reply = ping.Send("8.8.8.8", 2000);
+            var reply = ping.Send(pingHost, 2000);
             if (reply.Status == IPStatus.Success)
                 return new SensorData("connectivity", "Connectivity", "on",
                     deviceClass: "connectivity", icon: "mdi:check-network");
@@ -1041,5 +1061,142 @@ public class SensorManager
         var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
         return new SensorData("ha_desklink_version", "HA DeskLink Version",
             version, icon: "mdi:information-outline");
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Presence Detection (binary_sensor)
+    // ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Presence Detection: Kombiniert idle_time und connectivity.
+    /// Sensor ist "on" wenn idle_time &lt; 300 Sekunden UND connectivity = on.
+    /// </summary>
+    private static SensorData? GetPresence()
+    {
+        try
+        {
+            // Idle time über xprintidle holen (in ms)
+            double idleMs = 0;
+            try
+            {
+                var psi = new ProcessStartInfo("xprintidle")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var proc = Process.Start(psi);
+                var output = proc?.StandardOutput.ReadToEnd().Trim();
+                proc?.WaitForExit(2000);
+                if (!string.IsNullOrEmpty(output) && double.TryParse(output, out var ms))
+                    idleMs = ms;
+            }
+            catch { }
+
+            var idleSeconds = idleMs / 1000.0;
+            var isIdle = idleSeconds < 300;
+
+            // Connectivity prüfen (Ping wie GetConnectivity)
+            var isOnline = false;
+            try
+            {
+                var pingHost = "8.8.8.8";
+                try
+                {
+                    var config = Config.Load();
+                    if (!string.IsNullOrEmpty(config.HaUrl) && Uri.TryCreate(config.HaUrl, UriKind.Absolute, out var haUri))
+                        pingHost = haUri.Host;
+                }
+                catch { }
+
+                using var ping = new Ping();
+                var reply = ping.Send(pingHost, 2000);
+                isOnline = reply.Status == IPStatus.Success;
+            }
+            catch { }
+
+            var isPresent = isIdle && isOnline ? "on" : "off";
+
+            return new SensorData("presence", "Presence", isPresent,
+                deviceClass: "presence", icon: "mdi:account-check")
+            {
+                SensorKind = SensorType.BinarySensor
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Bluetooth Devices (Anzahl verbundener Geräte)
+    // ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Zählt verbundene Bluetooth-Geräte über bluetoothctl.
+    /// Gibt null zurück wenn Bluetooth nicht verfügbar ist.
+    /// </summary>
+    private static SensorData? GetBluetoothDevices()
+    {
+        try
+        {
+            // Primary: bluetoothctl devices Connected
+            try
+            {
+                var psi = new ProcessStartInfo("bluetoothctl", "devices Connected")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var proc = Process.Start(psi);
+                var output = proc?.StandardOutput.ReadToEnd() ?? "";
+                proc?.WaitForExit(3000);
+
+                // Zähle Zeilen die mit "Device " beginnen
+                var count = 0;
+                foreach (var line in output.Split('\n'))
+                {
+                    if (line.StartsWith("Device ", StringComparison.OrdinalIgnoreCase))
+                        count++;
+                }
+
+                return new SensorData("bluetooth_devices_connected", "Bluetooth Devices Connected",
+                    count, "",
+                    icon: "mdi:bluetooth-connect", stateClass: "measurement");
+            }
+            catch { }
+
+            // Fallback: hcitool con
+            try
+            {
+                var psi = new ProcessStartInfo("hcitool", "con")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var proc = Process.Start(psi);
+                var output = proc?.StandardOutput.ReadToEnd() ?? "";
+                proc?.WaitForExit(3000);
+
+                // Zähle Zeilen die mit "<" beginnen (verbundene Geräte)
+                var count = 0;
+                foreach (var line in output.Split('\n'))
+                {
+                    if (line.TrimStart().StartsWith("<"))
+                        count++;
+                }
+
+                return new SensorData("bluetooth_devices_connected", "Bluetooth Devices Connected",
+                    count, "",
+                    icon: "mdi:bluetooth-connect", stateClass: "measurement");
+            }
+            catch { }
+        }
+        catch { /* Bluetooth nicht verfügbar */ }
+
+        return null;
     }
 }
