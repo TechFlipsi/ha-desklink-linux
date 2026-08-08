@@ -12,9 +12,11 @@
 // GNU General Public License for more details.
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace HaDeskLink;
@@ -110,11 +112,32 @@ public static class CommandHandler
                     }
                     break;
                 default:
-                    // Check for brightness value command: "brightness:50"
-                    if (command.StartsWith("brightness:", StringComparison.OrdinalIgnoreCase))
+                    var cmdLower = command.ToLowerInvariant().Trim();
+                    // TTS (Text-to-Speech): "tts:Hallo Welt"
+                    if (cmdLower.StartsWith("tts:", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (int.TryParse(command.Substring("brightness:".Length), out int value))
+                        // Text aus originalen command extrahieren (Groß-/Kleinschreibung erhalten)
+                        // Finde "tts:" im originalen command (case-insensitive)
+                        var ttsIdx = command.IndexOf("tts:", StringComparison.OrdinalIgnoreCase);
+                        var text = ttsIdx >= 0 ? command.Substring(ttsIdx + 4).Trim() : "";
+                        SpeakText(text);
+                    }
+                    // App Launcher: "launch:spotify"
+                    else if (cmdLower.StartsWith("launch:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var appCommand = cmdLower.Substring(7).Trim();
+                        LaunchApp(appCommand);
+                    }
+                    // Check for brightness value command: "brightness:50"
+                    else if (cmdLower.StartsWith("brightness:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (int.TryParse(cmdLower.Substring("brightness:".Length), out int value))
                             SensorManager.SetBrightness(Math.Clamp(value, 0, 100));
+                    }
+                    // Custom Commands: prüfe ob der Command in der CustomCommands-Liste ist
+                    else if (TryExecuteCustomCommand(cmdLower))
+                    {
+                        // Wurde bereits in TryExecuteCustomCommand ausgeführt
                     }
                     break;
             }
@@ -220,7 +243,7 @@ public static class CommandHandler
             if (captured)
             {
                 Console.WriteLine($"[Screenshot] Saved: {filePath}");
-                // Upload to HA asynchronously
+                // Upload to HA asynchronously, then clean up temp file
                 Task.Run(async () =>
                 {
                     try
@@ -232,6 +255,10 @@ public static class CommandHandler
                         Console.WriteLine("[Screenshot] Uploaded to HA");
                     }
                     catch (Exception ex) { Console.WriteLine($"[Screenshot] Upload failed: {ex.Message}"); }
+                    finally
+                    {
+                        try { if (File.Exists(filePath)) File.Delete(filePath); } catch { }
+                    }
                 });
             }
             else
@@ -243,5 +270,147 @@ public static class CommandHandler
         {
             Console.WriteLine($"[Screenshot] Error: {ex.Message}");
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  TTS (Text-to-Speech) — Linux
+    // ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Spricht Text über espeak (Primary) oder spd-say (Fallback).
+    /// Der Text wird sicher als separates Argument übergeben, um
+    /// Command-Injection zu verhindern.
+    /// </summary>
+    private static void SpeakText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        // Primary: espeak
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "espeak",
+                Arguments = $"\"{text.Replace("\"", "\\\"")}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            Process.Start(psi);
+            return;
+        }
+        catch { /* espeak nicht verfügbar */ }
+
+        // Fallback: spd-say
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "spd-say",
+                Arguments = $"\"{text.Replace("\"", "\\\"")}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[TTS] Weder espeak noch spd-say verfügbar: {ex.Message}");
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  App Launcher — Linux
+    // ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Startet eine App anhand des konfigurierten AppLauncher-Commands.
+    /// Sucht in AppLaunchers Config nach dem command und startet den Pfad.
+    /// </summary>
+    private static void LaunchApp(string appCommand)
+    {
+        if (string.IsNullOrWhiteSpace(appCommand)) return;
+
+        try
+        {
+            var config = Config.Load();
+            var launchers = JsonSerializer.Deserialize<List<AppLauncherEntry>>(config.AppLaunchers);
+            if (launchers == null) return;
+
+            var entry = launchers.Find(l =>
+                string.Equals(l.Command, appCommand, StringComparison.OrdinalIgnoreCase));
+            if (entry == null || string.IsNullOrEmpty(entry.Path))
+            {
+                Console.WriteLine($"[AppLauncher] '{appCommand}' nicht gefunden");
+                return;
+            }
+
+            // Linux: direkter Start; bash -c wenn Pfad Leerzeichen enthält
+            if (entry.Path.Contains(' '))
+            {
+                Run("bash", $"-c \"{entry.Path.Replace("\"", "\\\"")}\"");
+            }
+            else
+            {
+                try { Process.Start(entry.Path); }
+                catch
+                {
+                    // Fallback: über bash versuchen (z.B. bei .desktop-Dateien oder Kommandozeilen-Tools)
+                    Run("bash", $"-c \"{entry.Path.Replace("\"", "\\\"")}\"");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AppLauncher] Fehler: {ex.Message}");
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  Custom Commands — Linux
+    // ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Prüft ob der Command in der CustomCommands-Liste der Config ist.
+    /// Wenn ja, wird das konfigurierte Skript ausgeführt.
+    /// </summary>
+    /// <returns>true wenn der Command gefunden und ausgeführt wurde</returns>
+    private static bool TryExecuteCustomCommand(string command)
+    {
+        try
+        {
+            var config = Config.Load();
+            var customCommands = JsonSerializer.Deserialize<List<CustomCommandEntry>>(config.CustomCommands);
+            if (customCommands == null || customCommands.Count == 0) return false;
+
+            var entry = customCommands.Find(c =>
+                string.Equals(c.Command, command, StringComparison.OrdinalIgnoreCase));
+            if (entry == null || string.IsNullOrEmpty(entry.Script)) return false;
+
+            // Linux: bash -c script
+            Run("bash", $"-c \"{entry.Script.Replace("\"", "\\\"")}\"");
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  JSON Modelle für Custom Commands und App Launchers
+    // ─────────────────────────────────────────────────────────────────
+
+    private class CustomCommandEntry
+    {
+        public string Command { get; set; } = "";
+        public string Script { get; set; } = "";
+        public string Name { get; set; } = "";
+    }
+
+    private class AppLauncherEntry
+    {
+        public string Command { get; set; } = "";
+        public string Path { get; set; } = "";
+        public string Name { get; set; } = "";
     }
 }

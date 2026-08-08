@@ -37,6 +37,10 @@ public class App : Application
     {
         CurrentConfig = Config.Load();
 
+        // Sprache beim App-Start laden
+        if (CurrentConfig != null)
+            Localization.LoadLanguage(CurrentConfig.Language);
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow();

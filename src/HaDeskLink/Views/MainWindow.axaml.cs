@@ -75,6 +75,7 @@ public partial class MainWindow : Window
         if (_statusLabel != null)
             _statusLabel.Text = string.IsNullOrEmpty(_haUrl) ? "⚠️ Nicht verbunden" : $"✓ Verbunden: {_haUrl}";
         LoadMqttSettings(config);
+        LoadLanguageSettings(config);
     }
 
     private void LoadMqttSettings(Config config)
@@ -104,6 +105,47 @@ public partial class MainWindow : Window
             else
                 lblStatus.Text = "● Getrennt";
         }
+    }
+
+    private void LoadLanguageSettings(Config config)
+    {
+        var cbLanguage = this.FindControl<ComboBox>("CbLanguage");
+        var btnSaveLanguage = this.FindControl<Button>("BtnSaveLanguage");
+
+        if (cbLanguage != null)
+        {
+            // Sprach-Dropdown füllen: "Name (code)" für jede verfügbare Sprache
+            cbLanguage.Items.Clear();
+            foreach (var lang in Localization.AvailableLanguages)
+                cbLanguage.Items.Add($"{Localization.GetLanguageName(lang)} ({lang})");
+
+            // Aktuell ausgewählte Sprache setzen
+            var idx = Localization.AvailableLanguages.IndexOf(config.Language);
+            cbLanguage.SelectedIndex = idx >= 0 ? idx : 0;
+        }
+
+        if (btnSaveLanguage != null)
+            btnSaveLanguage.Click += OnSaveLanguage;
+    }
+
+    private void OnSaveLanguage(object? sender, RoutedEventArgs e)
+    {
+        var cbLanguage = this.FindControl<ComboBox>("CbLanguage");
+        if (cbLanguage == null || cbLanguage.SelectedIndex < 0) return;
+
+        var config = Config.Load();
+        var idx = cbLanguage.SelectedIndex;
+
+        if (idx >= 0 && idx < Localization.AvailableLanguages.Count)
+        {
+            config.Language = Localization.AvailableLanguages[idx];
+            config.Save();
+            // Sprache neu laden
+            Localization.LoadLanguage(config.Language);
+        }
+
+        if (_statusLabel != null)
+            _statusLabel.Text = $"✓ {Localization.Get("settings_saved")}";
     }
 
     private void OnMqttSave(object? sender, RoutedEventArgs e)
