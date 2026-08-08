@@ -51,7 +51,7 @@ public partial class MainWindow : Window
         if (btnQuickActions != null) btnQuickActions.Click += OnQuickActions;
 
         var btnDiscord = this.FindControl<Button>("BtnDiscord");
-        if (btnDiscord != null) btnDiscord.Click += (s, e) => OpenUrl("https://discord.gg/7G2SqpXpsC");
+        if (btnDiscord != null) btnDiscord.Click += (s, e) => OpenUrl("https://discord.com/invite/zHPhQ7EaqH");
 
         var btnGitHub = this.FindControl<Button>("BtnGitHub");
         if (btnGitHub != null) btnGitHub.Click += (s, e) => OpenUrl("https://github.com/TechFlipsi/ha-desklink-linux");
