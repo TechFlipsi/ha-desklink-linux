@@ -1,4 +1,4 @@
-# HA DeskLink Linux v4.3
+# HA DeskLink Linux v5.0.0
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -31,17 +31,15 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 - ⚡ **Quick Actions** – Dashboard-Button für HA-Entity-Toggles
 - 📸 **Screenshot** – Bildschirmfoto speichern + als HA-Event hochladen
 - 📷 **Webcam-Sensor** – Zeigt ob Webcam aktiv ist (on/off)
-- 🔔 **Actionable Notifications** – Benachrichtigungen mit Aktions-Buttons
-- 📸 **Screenshot** – Bildschirmfoto speichern + als HA-Event hochladen
 - 🔋 **Helligkeits-Befehle** – brightness_up/down/:N (Laptops)
 - 🔌 **mobile_app Protokoll** – identisch zur Windows-App, keine Extra-Konfiguration in HA nötig
 - 🔄 **Auto-Update** – Alle 2 Stunden wird nach Updates gesucht
 - 🐧 **Headless Daemon** – läuft als systemd-Service im Hintergrund
 - 🛡️ **Downgrade-Schutz** – nur Upgrades, keine älteren Versionen
 
-## MQTT (v4.3)
+## MQTT (v5.0.0)
 
-HA DeskLink v4.3 bringt **optionale MQTT-Unterstützung** für erweiterte Features:
+HA DeskLink v5.0.0 bringt **optionale MQTT-Unterstützung** für erweiterte Features:
 
 - 🔊 **Media Player Entity** – Dein PC erscheint als Media Player in Home Assistant mit now-playing Info, Play/Pause und Lautstärke-Regelung
 - 📡 **PC Status Binary Sensor** – Sofortige Online/Offline-Erkennung via Last Will Testament (LWT)
@@ -169,6 +167,9 @@ This program is free software: you can redistribute it and/or modify it under th
 
 **Important:** If you modify or distribute this software, you MUST release your changes under the same GPL v3 license. Closed-source or proprietary use is NOT permitted. – Copyright © 2026 Fabian Kirchweger
 
+## Windows-Version
+Siehe [ha-desklink-dotnet](https://github.com/TechFlipsi/ha-desklink-dotnet) für die Windows-Version (v5.0.x).
+
 ## macOS-Version
 Es gibt jetzt eine macOS-Version von HA DeskLink! 🎉 Siehe [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ Community Test Version, nicht vom Entwickler getestet.
 
@@ -176,4 +177,4 @@ Es gibt jetzt eine macOS-Version von HA DeskLink! 🎉 Siehe [ha-desklink-mac](h
 💬 [Discord](https://discord.com/invite/zHPhQ7EaqH) – Fragen, Feedback, Hilfe
 
 ## Erstellung
-Dieses Projekt wurde unter Verwendung von KI-Unterstützung erstellt. Die Entwicklung erfolgte durch **J.A.R.V.I.S. (Hermes Agent)**. Als Hauptmodell kam **GLM-5.1** zum Einsatz (Architektur, Code, Debugging); **DeepSeek V4 Pro** wurde für Sub-Agenten-Aufgaben wie Tests und Audits verwendet. Die englische Dokumentation wurde ebenfalls von der KI aus dem Deutschen ins Englische übersetzt. Die deutsche Dokumentation ist die Originalversion. Details siehe [CREDITS.md](CREDITS.md).
+Dieses Projekt wurde unter Verwendung von KI-Unterstützung erstellt. Die Entwicklung erfolgte durch **J.A.R.V.I.S. (Hermes Agent)**. Als Hauptmodell kam **GLM-5.2** zum Einsatz (Architektur, Code, Debugging); **DeepSeek V4 Pro** wurde für Sub-Agenten-Aufgaben wie Tests und Audits verwendet. Die englische Dokumentation wurde ebenfalls von der KI aus dem Deutschen ins Englische übersetzt. Die deutsche Dokumentation ist die Originalversion. Details siehe [CREDITS.md](CREDITS.md).

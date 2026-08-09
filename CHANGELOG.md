@@ -1,5 +1,12 @@
 # Changelog
 
+## [v5.0.0] - 2026-08-08
+
+### Versionsangleichung mit Windows (v5.0.x)
+- **Versionssprung:** v4.4.0 → v5.0.0 (Angleichung an Windows-Version v5.0.x)
+- **Feature-Parität:** MQTT, Media Player, PC Status Binary Sensor und alle v4.4-Features sind jetzt Teil der v5.0.x Linie
+- Alle drei Plattformen (Windows, Linux, macOS) nutzen nun die gleiche Major-Version v5.0.x
+
 ## [v4.4.0] - 2026-05-24
 
 ### MQTT Support (optional)
