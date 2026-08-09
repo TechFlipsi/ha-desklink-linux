@@ -1,4 +1,4 @@
-# HA DeskLink Linux v4.3
+# HA DeskLink Linux v5.0.0
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -32,9 +32,9 @@ Written in **C# / .NET 8**, uses `/sys`, `/proc`, and Linux tools for hardware s
 - 🐧 **Headless Daemon** – runs as systemd service in the background
 - 🛡️ **Downgrade Protection** – only upgrades, no older versions
 
-## MQTT (v4.3)
+## MQTT (v5.0.0)
 
-HA DeskLink v4.3 brings **optional MQTT support** for advanced features:
+HA DeskLink v5.0.0 brings **optional MQTT support** for advanced features:
 
 - 🔊 **Media Player Entity** – Your PC appears as a Media Player in Home Assistant with now-playing info, play/pause and volume control
 - 📡 **PC Status Binary Sensor** – Instant online/offline detection via Last Will Testament (LWT)
@@ -167,7 +167,7 @@ This program is free software: you can redistribute it and/or modify it under th
 **Important:** If you modify or distribute this software, you MUST release your changes under the same GPL v3 license. Closed-source or proprietary use is NOT permitted.
 
 ## Windows Version
-See [ha-desklink-dotnet](https://github.com/TechFlipsi/ha-desklink-dotnet) for the Windows version.
+See [ha-desklink-dotnet](https://github.com/TechFlipsi/ha-desklink-dotnet) for the Windows version (v5.0.x).
 
 ## macOS Version
 See [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ Community Test Version.
@@ -176,4 +176,4 @@ See [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ 
 💬 [Discord](https://discord.com/invite/zHPhQ7EaqH) – Questions, Feedback, Help
 
 ## Attribution
-This project was created with AI assistance. All code was written and developed by **GLM-5.1** (via OpenClaw) – from architecture to implementation to debugging. The English documentation was translated from German by AI. The German documentation is the original version.
+This project was created with AI assistance. All code was written and developed by **GLM-5.2** (via J.A.R.V.I.S. / Hermes Agent) – from architecture to implementation to debugging. **DeepSeek V4 Pro** was used for sub-agent tasks like tests and audits. The English documentation was translated from German by AI. The German documentation is the original version.
