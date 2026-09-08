@@ -1,5 +1,29 @@
 # Changelog
 
+## [v5.0.4] - 2026-09-08
+
+### ✨ UI-Redesign (Port von Windows v5.0.1–v5.0.4)
+- **Sidebar-Navigation** – 200px Sidebar links (Dashboard, Quick Actions, Einstellungen, Sensoren aktualisieren) + Content-Bereich + Bottom Bar — gleiche Struktur wie die Windows-Version, nativ in Avalonia (Grid/DockPanel statt SplitContainer; die Windows-SplitContainer-Abstürze v5.0.2/5.0.3 betreffen Avalonia nicht)
+- **Einstellungen mit Erklärungstexten** – Neues Settings-Fenster mit 7 Kategorien (Verbindung, Allgemein, Erscheinungsbild, Benachrichtigungen, Tastenkombinationen, MQTT, Quick Actions). Jede Einstellung hat eine Beschreibung (24 neue `desc_*` i18n-Keys), 200px-Label-Spalte gegen Wortumbruch bei deutschen Begriffen, Bottom Bar mit Speichern/Neu verbinden immer sichtbar
+- **Quick Actions Popup** – Hotkey-gesteuertes Popup zum Ein-/Ausschalten von HA-Entities (Escape/fokuslos = schließen, Auto-Close nach Toggle)
+- **Konfigurierbare Hotkeys** – Quick Actions (Ctrl+Shift+H), Dashboard (Ctrl+Shift+D), Einstellungen (Ctrl+Shift+S) — gelten innerhalb der HA DeskLink Fenster (Linux/Wayland erlaubt keine systemweiten Hotkeys)
+- **Actionable Notifications als echte Toasts** – GUI-Modus zeigt HA-Benachrichtigungen jetzt als Avalonia-Toasts mit Aktions-Buttons (Befehle in `command`/`actions`/`command_on_action` werden ausgeführt, Headless-Daemon nutzt weiterhin notify-send)
+- **Benachrichtigungs-Position & Monitor** – Konfigurierbare Toast-Position (unten links/rechts, oben links/rechts) und Monitor-Auswahl
+- **Dark/Light Theme** – Einstellung System/Hell/Dunkel für das gesamte UI
+- **Autostart (XDG)** – Desktop-Eintrag in `~/.config/autostart/` statt Windows-Registry/Task Scheduler
+
+### 🌍 i18n
+- **24 neue `desc_*`-Keys** in ALLE 15 Sprachen übernommen (de, en, es, fr, it, ja, ko, nl, pl, pt, ru, sv, tr, zh, ar) — plus 13 Support-Keys (MQTT-Test, Validierungen, Section-Titel)
+
+### 🐛 Bugfixes & Maintenance
+- **GitHub Update-Repo-URL** – Auto-Updater prüft jetzt `TechFlipsi/ha-desklink-linux` Releases (wie schon v5.0.0; Windows-Fix v5.0.4 hier ohne Änderung, da korrekt)
+- **Discord-Einladungslink** korrigiert (`discord.com/invite/zHPhQ7EaqH`)
+- **Dokumentations-URLs** – alte `ha-desklink-dotnet`-Links durch `ha-desklink-windows` ersetzt (README, MANUAL)
+- **GetEntitiesAsync** – HA-Entity-Liste für Quick Actions (gleiche API wie Windows)
+- **ReRegisterSensors** – Sensoren können aus der GUI heraus neu registriert werden
+- **Dashboard-Fenster** – 1300×850, Mindestgröße 800×600, Fokus-Aktivierung (Windows-Parität)
+- **Versions-Fallback** – Assembly-Fallback im Versionsstring auf 5.0.4 korrigiert
+
 ## [v5.0.0] - 2026-08-08
 
 ### Versionsangleichung mit Windows (v5.0.x)

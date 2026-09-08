@@ -44,6 +44,8 @@ public class DeskLinkApp : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        Instance = this;
+
         // Clean up stale update pending marker
         try { File.Delete(Path.Combine(Config.GetConfigDir(), ".update_pending")); } catch { }
 
@@ -292,10 +294,44 @@ public class DeskLinkApp : BackgroundService
         catch { }
 
         _wsClient?.Dispose();
+        Instance = null;
         await base.StopAsync(cancellationToken);
     }
 
     // ── MQTT Smart Routing ────────────────────────────────────────
+
+    /// <summary>
+    /// Single app instance for cross-class access (settings reconnect, sensor re-register).
+    /// </summary>
+    public static DeskLinkApp? Instance { get; private set; }
+
+    /// <summary>
+    /// Re-register all sensors with Home Assistant (called from settings).
+    /// Runs independently of the daemon loop so it also works headless.
+    /// </summary>
+    public static void ReRegisterSensors()
+    {
+        try
+        {
+            var config = Config.Load();
+            var api = new HaApiClient(Config.GetConfigDir(), config.VerifySsl);
+            if (!api.LoadRegistration())
+                return;
+
+            var sensors = new SensorManager();
+            var all = sensors.CollectAll();
+            foreach (var sensor in all)
+            {
+                try { api.RegisterSensorAsync(sensor).Wait(5000); } catch { }
+            }
+            api.UpdateSensorStatesAsync(all).Wait(10000);
+            Console.WriteLine($"[HA DeskLink] Re-registered {all.Count} sensors");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[HA DeskLink] Re-register failed: {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// Connect to MQTT, publish discovery on connect, and handle reconnect with state republish.

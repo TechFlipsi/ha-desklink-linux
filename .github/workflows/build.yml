@@ -93,11 +93,11 @@ jobs:
           body: |
             HA DeskLink Linux v${{ steps.version.outputs.VERSION }}
 
+            ✨ **UI-Redesign (Port von Windows v5.0.1–v5.0.4)** — Sidebar-Navigation, Einstellungen mit Erklärungstexten, Quick Actions Hotkeys!
             🌐 **Eingebettetes Dashboard** — HA direkt in der App via WebView + Auto-Login!
             🛡️ **IP-Ban-Schutz** — Max. 3 Login-Versuche, dann Pause. Kein Risiko für deine HA-Instanz.
-            🎨 **Modernes Dark-UI** — Alle Dialoge komplett neu gestaltet.
-
-            ⚠️ **PRE-RELEASE / BETA** – Verwendung auf eigene Gefahr!
+            🔔 **Toast-Benachrichtigungen** — Mit Aktions-Buttons, konfigurierbare Position & Monitor.
+            🎨 **Dark/Light-Theme** — System/Hell/Dunkel einstellbar.
 
             ## Abhängigkeiten
             ```bash
@@ -126,7 +126,7 @@ jobs:
             - Auto-Update von GitHub
             - Headless Daemon (systemd)
           generate_release_notes: false
-          prerelease: true
+          prerelease: false
 
       - name: Discord Release Notification
         if: always()
