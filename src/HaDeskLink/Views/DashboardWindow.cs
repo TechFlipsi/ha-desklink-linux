@@ -16,6 +16,7 @@ namespace HaDeskLink.Views;
 /// Embedded HA Dashboard using WebView.Avalonia.Linux.Cross.
 /// Opens the HA login page — user logs in once with username/password,
 /// then WebView remembers the session (just like a regular browser).
+/// Falls back to the default browser if the WebView runtime is missing.
 /// </summary>
 public class DashboardWindow : Window
 {
@@ -24,19 +25,23 @@ public class DashboardWindow : Window
     private TextBlock? _errorLabel;
     private StackPanel? _loadingPanel;
     private Border? _mainPanel;
+    private static DashboardWindow? _instance;
 
     public DashboardWindow(string haUrl)
     {
         _haUrl = haUrl.TrimEnd('/');
 
         Title = "HA DeskLink - Dashboard";
-        Width = 1200;
-        Height = 800;
+        Width = 1300;
+        Height = 850;
+        MinWidth = 800;
+        MinHeight = 600;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = new SolidColorBrush(Color.FromArgb(255, 26, 26, 46));
 
         BuildContent();
         Loaded += OnLoaded;
+        Closed += (s, e) => _instance = null;
     }
 
     private void BuildContent()
@@ -142,6 +147,7 @@ public class DashboardWindow : Window
         }
 
         var window = new DashboardWindow(haUrl);
+        _instance = window;
         window.Show();
     }
 }

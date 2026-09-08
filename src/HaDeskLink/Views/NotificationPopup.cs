@@ -193,6 +193,56 @@ public class NotificationPopup : Window
         }
     }
 
+    /// <summary>
+    /// Position the popup according to Config.NotificationPosition and Config.NotificationMonitor.
+    /// Falls back to bottom-left on the primary screen.
+    /// </summary>
+    public void PositionFromConfig()
+    {
+        var config = Config.Load();
+        var screens = Screens.All;
+        var screen = config.NotificationMonitor >= 0 && config.NotificationMonitor < screens.Count
+            ? screens[config.NotificationMonitor]
+            : screens.FirstOrDefault();
+        if (screen == null)
+        {
+            PositionBottomLeft();
+            return;
+        }
+
+        var wa = screen.WorkingArea;
+        const int margin = 20;
+        Position = config.NotificationPosition?.ToLowerInvariant() switch
+        {
+            "bottom_right" => new PixelPoint(wa.X + wa.Width - (int)Width - margin, wa.Y + wa.Height - (int)Height - margin - 16),
+            "top_left"     => new PixelPoint(wa.X + margin, wa.Y + margin),
+            "top_right"    => new PixelPoint(wa.X + wa.Width - (int)Width - margin, wa.Y + margin),
+            _              => new PixelPoint(wa.X + margin, wa.Y + wa.Height - (int)Height - margin - 16), // bottom_left
+        };
+    }
+
+    /// <summary>
+    /// Show a standard notification with blue accent, positioned per config.
+    /// </summary>
+    public static NotificationPopup ShowNotification(string title, string message, List<NotificationActionInfo>? actions = null)
+    {
+        var popup = new NotificationPopup(title, message, actions);
+        popup.Show();
+        popup.PositionFromConfig();
+        return popup;
+    }
+
+    /// <summary>
+    /// Show a connection success toast with green accent.
+    /// </summary>
+    public static NotificationPopup ShowConnectionToast(string title, string message)
+    {
+        var popup = new NotificationPopup(title, message, null, AccentGreenBrush);
+        popup.Show();
+        popup.PositionFromConfig();
+        return popup;
+    }
+
     private void CloseAnimated()
     {
         if (_isClosing) return;
@@ -207,28 +257,6 @@ public class NotificationPopup : Window
         _autoCloseTimer?.Stop();
         _autoCloseTimer = null;
         base.OnClosed(e);
-    }
-
-    /// <summary>
-    /// Show a standard notification with blue accent.
-    /// </summary>
-    public static NotificationPopup ShowNotification(string title, string message, List<NotificationActionInfo>? actions = null)
-    {
-        var popup = new NotificationPopup(title, message, actions);
-        popup.Show();
-        popup.PositionBottomLeft();
-        return popup;
-    }
-
-    /// <summary>
-    /// Show a connection success toast with green accent.
-    /// </summary>
-    public static NotificationPopup ShowConnectionToast(string title, string message)
-    {
-        var popup = new NotificationPopup(title, message, null, AccentGreenBrush);
-        popup.Show();
-        popup.PositionBottomLeft();
-        return popup;
     }
 }
 

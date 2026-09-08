@@ -34,9 +34,32 @@ public class Config
     public string HaUrl { get; set; } = "";
     public string HaToken { get; set; } = "";
     public bool VerifySsl { get; set; } = true;
+    /// <summary>
+    /// Autostart via XDG autostart (~/.config/autostart). Default: false (daemon users use systemd instead).
+    /// </summary>
+    public bool Autostart { get; set; } = false;
     public int SensorInterval { get; set; } = 30;
     public string UpdateChannel { get; set; } = "stable";
     public string Language { get; set; } = "de";
+    /// <summary>
+    /// UI theme: "system", "light", or "dark". Default: dark (matches the built-in dark UI).
+    /// </summary>
+    public string Theme { get; set; } = "dark";
+    /// <summary>
+    /// Quick Actions hotkey modifiers: "ctrl_shift", "ctrl_alt", "ctrl", "alt", "shift", "none".
+    /// Linux: hotkeys are handled while an HA DeskLink window has keyboard focus (Wayland has no global hotkeys).
+    /// </summary>
+    public string HotkeyModifiers { get; set; } = "ctrl_shift";
+    /// <summary>Quick Actions hotkey key. Default: H</summary>
+    public string HotkeyKey { get; set; } = "H";
+    /// <summary>Dashboard hotkey modifiers. Default: ctrl_shift</summary>
+    public string HotkeyDashboardModifiers { get; set; } = "ctrl_shift";
+    /// <summary>Dashboard hotkey key. Default: D</summary>
+    public string HotkeyDashboardKey { get; set; } = "D";
+    /// <summary>Settings hotkey modifiers. Default: ctrl_shift</summary>
+    public string HotkeySettingsModifiers { get; set; } = "ctrl_shift";
+    /// <summary>Settings hotkey key. Default: S</summary>
+    public string HotkeySettingsKey { get; set; } = "S";
     /// <summary>
     /// Quick Actions: JSON array of { entityId, name } objects.
     /// </summary>
@@ -61,6 +84,16 @@ public class Config
     /// when HA URL is a domain name that may not resolve MQTT correctly).
     /// </summary>
     public string MqttBrokerFallback { get; set; } = "";
+
+    /// <summary>
+    /// Notification position: "bottom_left", "bottom_right", "top_left", "top_right". Default: bottom_left
+    /// </summary>
+    public string NotificationPosition { get; set; } = "bottom_left";
+
+    /// <summary>
+    /// Monitor index for notifications (0 = primary, 1+ = specific monitor). Default: 0
+    /// </summary>
+    public int NotificationMonitor { get; set; } = 0;
 
     /// <summary>
     /// Custom Commands: JSON-Array von benutzerdefinierten Skripten/Befehlen
@@ -281,11 +314,19 @@ public class Config
             HaUrl = HaUrl,
             HaToken = "", // NEVER save plaintext token
             VerifySsl = VerifySsl,
+            Autostart = Autostart,
             SensorInterval = SensorInterval,
             UpdateChannel = UpdateChannel,
             Language = Language,
             HaTokenEncrypted = HaTokenEncrypted,
             QuickActions = QuickActions,
+            Theme = Theme,
+            HotkeyModifiers = HotkeyModifiers,
+            HotkeyKey = HotkeyKey,
+            HotkeyDashboardModifiers = HotkeyDashboardModifiers,
+            HotkeyDashboardKey = HotkeyDashboardKey,
+            HotkeySettingsModifiers = HotkeySettingsModifiers,
+            HotkeySettingsKey = HotkeySettingsKey,
             MqttEnabled = MqttEnabled,
             MqttBroker = MqttBroker,
             MqttPort = MqttPort,
@@ -296,7 +337,9 @@ public class Config
             MqttAutoConfigured = MqttAutoConfigured,
             MqttBrokerFallback = MqttBrokerFallback,
             CustomCommands = CustomCommands,
-            AppLaunchers = AppLaunchers
+            AppLaunchers = AppLaunchers,
+            NotificationPosition = NotificationPosition,
+            NotificationMonitor = NotificationMonitor
         };
 
         var json = JsonSerializer.Serialize(saveConfig, new JsonSerializerOptions { WriteIndented = true });

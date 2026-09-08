@@ -1,4 +1,4 @@
-# HA DeskLink Linux v5.0.0
+# HA DeskLink Linux v5.0.4
 
 [![Build](https://img.shields.io/github/actions/workflow/status/TechFlipsi/ha-desklink-linux/build.yml?branch=main&label=Build)](https://github.com/TechFlipsi/ha-desklink-linux/actions)
 [![Version](https://img.shields.io/github/v/release/TechFlipsi/ha-desklink-linux?label=Version)](https://github.com/TechFlipsi/ha-desklink-linux/releases/latest)
@@ -6,7 +6,7 @@
 [![Downloads](https://img.shields.io/github/downloads/TechFlipsi/ha-desklink-linux/total?label=Downloads)](https://github.com/TechFlipsi/ha-desklink-linux/releases)
 [![Discord](https://img.shields.io/discord/1496261911677894867?label=Discord)](https://discord.com/invite/zHPhQ7EaqH)
 
-⚠️ **PRE-RELEASE / BETA** – Diese Version wurde noch nicht auf einem echten Linux-System getestet. Verwendung auf eigene Gefahr. Feedback und Bug-Reports sind willkommen!
+✅ **v5.0.4 – Stabiles Release** – Port des Windows-UI-Redesigns (v5.0.1–v5.0.4): Sidebar-Navigation, Einstellungen mit Erklärungstexten, Quick Actions Hotkeys, Toast-Benachrichtigungen mit Position/Monitor, Dark/Light-Theme, XDG-Autostart.
 
 **Linux Companion App für Home Assistant** – headless, nativ, zuverlässig.
 
@@ -25,10 +25,10 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 - 📊 **Alle Sensoren** – CPU, GPU, RAM, alle Laufwerke, VRAM, Akku, Uptime, Netzwerk, Audio, Mikrofon, Webcam, Idle-Zeit, Aktives Fenster
 - 🖥️ **PC-Befehle aus HA** – Shutdown, Restart, Hibernate, Suspend, Sleep, Lock, Lautstärke, Mediensteuerung
 - 🖥️ **Eingebettetes Dashboard** – WebView.Avalonia zeigt HA-Dashboard direkt in der App (einmaliges Login, Session bleibt erhalten)
-- 🖥️ **Grafische Oberfläche** – Avalonia UI Dashboard mit Status, Sensoren & Einrichtung
+- 🖥️ **Grafische Oberfläche** – Avalonia UI mit Sidebar-Navigation (Dashboard, Quick Actions, Einstellungen)
 - 📬 **Push-Benachrichtigungen** – WebSocket-basiert, wie die Handy-App
-- 🔔 **Actionable Notifications** – Benachrichtigungen mit Aktions-Buttons
-- ⚡ **Quick Actions** – Dashboard-Button für HA-Entity-Toggles
+- 🔔 **Actionable Notifications** – Toast-Benachrichtigungen mit Aktions-Buttons, konfigurierbare Position & Monitor
+- ⚡ **Quick Actions** – Hotkey-Popup (Ctrl+Shift+H) für HA-Entity-Toggles, konfigurierbar in den Einstellungen
 - 📸 **Screenshot** – Bildschirmfoto speichern + als HA-Event hochladen
 - 📷 **Webcam-Sensor** – Zeigt ob Webcam aktiv ist (on/off)
 - 🔋 **Helligkeits-Befehle** – brightness_up/down/:N (Laptops)
@@ -37,9 +37,9 @@ Geschrieben in **C# / .NET 8**, nutzt `/sys`, `/proc` und Linux-Tools für Hardw
 - 🐧 **Headless Daemon** – läuft als systemd-Service im Hintergrund
 - 🛡️ **Downgrade-Schutz** – nur Upgrades, keine älteren Versionen
 
-## MQTT (v5.0.0)
+## MQTT (ab v5.0.0)
 
-HA DeskLink v5.0.0 bringt **optionale MQTT-Unterstützung** für erweiterte Features:
+HA DeskLink bringt (ab v5.0.0) **optionale MQTT-Unterstützung** für erweiterte Features:
 
 - 🔊 **Media Player Entity** – Dein PC erscheint als Media Player in Home Assistant mit now-playing Info, Play/Pause und Lautstärke-Regelung
 - 📡 **PC Status Binary Sensor** – Sofortige Online/Offline-Erkennung via Last Will Testament (LWT)
@@ -168,7 +168,7 @@ This program is free software: you can redistribute it and/or modify it under th
 **Important:** If you modify or distribute this software, you MUST release your changes under the same GPL v3 license. Closed-source or proprietary use is NOT permitted. – Copyright © 2026 Fabian Kirchweger
 
 ## Windows-Version
-Siehe [ha-desklink-dotnet](https://github.com/TechFlipsi/ha-desklink-dotnet) für die Windows-Version (v5.0.x).
+Siehe [ha-desklink-windows](https://github.com/TechFlipsi/ha-desklink-windows) für die Windows-Version (v5.0.x).
 
 ## macOS-Version
 Es gibt jetzt eine macOS-Version von HA DeskLink! 🎉 Siehe [ha-desklink-mac](https://github.com/TechFlipsi/ha-desklink-mac) – ⚠️ Community Test Version, nicht vom Entwickler getestet.

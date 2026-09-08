@@ -10,9 +10,11 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using AvaloniaWebView;
 using HaDeskLink.Views;
 
@@ -21,6 +23,7 @@ namespace HaDeskLink;
 public class App : Application
 {
     public static Config? CurrentConfig { get; private set; }
+    private HaWebSocketClient? _wsClient;
 
     public override void Initialize()
     {
@@ -49,6 +52,37 @@ public class App : Application
             {
                 ((MainWindow)desktop.MainWindow).HaUrl = CurrentConfig.HaUrl;
             }
+
+            // WebSocket für Push-Benachrichtigungen (nur wenn eine Registrierung existiert).
+            // GUI-Modus zeigt echte Avalonia-Toasts mit Aktions-Buttons (NotificationHandler).
+            try
+            {
+                var config = CurrentConfig;
+                if (config != null && !string.IsNullOrEmpty(config.HaToken))
+                {
+                    var api = new HaApiClient(Config.GetConfigDir(), config.VerifySsl);
+                    var webhookId = api.GetWebhookId();
+                    if (!string.IsNullOrEmpty(webhookId))
+                    {
+                        _wsClient = new HaWebSocketClient(config.HaUrl, config.HaToken, webhookId,
+                            msg => Console.WriteLine($"[HA DeskLink] Notification: {msg}"),
+                            isBlocked: () => api.IsBlocked,
+                            verifySsl: config.VerifySsl,
+                            onRawNotification: json =>
+                            {
+                                // Auf dem UI-Thread als Toast anzeigen
+                                Dispatcher.UIThread.Post(() => NotificationHandler.TryHandleNotification(json));
+                            });
+                        _ = _wsClient.ConnectAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[HA DeskLink] WebSocket init failed: {ex.Message}");
+            }
+
+            desktop.Exit += (s, e) => _wsClient?.Dispose();
         }
 
         base.OnFrameworkInitializationCompleted();

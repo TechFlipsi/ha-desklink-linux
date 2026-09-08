@@ -33,6 +33,7 @@ public class HaWebSocketClient : IDisposable
     private readonly string _token;
     private readonly string _webhookId;
     private readonly Action<string>? _onNotification;
+    private readonly Action<string>? _onRawNotification;
     private readonly Func<bool>? _isBlocked;
     private readonly bool _verifySsl;
     private ClientWebSocket? _ws;
@@ -45,12 +46,13 @@ public class HaWebSocketClient : IDisposable
     /// </summary>
     public bool IsBlocked => _consecutiveFailures >= MaxFailures;
 
-    public HaWebSocketClient(string haUrl, string token, string webhookId, Action<string>? onNotification = null, Func<bool>? isBlocked = null, bool verifySsl = true)
+    public HaWebSocketClient(string haUrl, string token, string webhookId, Action<string>? onNotification = null, Func<bool>? isBlocked = null, bool verifySsl = true, Action<string>? onRawNotification = null)
     {
         _haUrl = haUrl;
         _token = token;
         _webhookId = webhookId;
         _onNotification = onNotification;
+        _onRawNotification = onRawNotification;
         _isBlocked = isBlocked;
         _verifySsl = verifySsl;
     }
@@ -276,6 +278,14 @@ public class HaWebSocketClient : IDisposable
                 }
 
                 _onNotification?.Invoke($"{title}\n{text}");
+
+                // GUI mode: forward the raw notification JSON for Avalonia toasts
+                // (NotificationHandler parses title/message/command/actions itself)
+                if (!string.IsNullOrEmpty(text))
+                {
+                    try { _onRawNotification?.Invoke(data.GetRawText()); }
+                    catch { }
+                }
             }
         }
         catch (Exception ex) { Console.WriteLine($"[WebSocket] Connection error: {ex.Message}"); }
