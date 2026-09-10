@@ -5,20 +5,21 @@
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>ha-desklink</AssemblyName>
     <RootNamespace>HaDeskLink</RootNamespace>
-    <Version>5.0.4</Version>
+    <Version>5.0.5</Version>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
     <DefineConstants>LINUX</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.2.3" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.3" />
-    <PackageReference Include="WebView.Avalonia" Version="11.0.0.1" />
-    <PackageReference Include="WebView.Avalonia.Linux.Cross" Version="11.2.4" />
-    <PackageReference Include="WebView.Avalonia.Desktop.Cross" Version="11.2.4" />
+    <PackageReference Include="Avalonia" Version="11.3.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.1" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.1" />
+    <PackageReference Include="Noise.NET" Version="1.0.0" />
+    <PackageReference Include="WebView.Avalonia.Cross" Version="11.3.1" />
+    <PackageReference Include="WebView.Avalonia.Linux.Cross" Version="11.3.1" />
+    <PackageReference Include="WebView.Avalonia.Desktop.Cross" Version="11.3.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="MQTTnet" Version="4.3.7.1207" />
