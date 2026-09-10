@@ -27,6 +27,14 @@
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
                             BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
                             ToolTip.Tip="Konfigurierte HA-Entitäten schnell ein-/ausschalten" />
+                    <Button Name="BtnNavWidgets" Content="  🧩 Widgets" Background="Transparent" Foreground="#E0E0E0"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
+                            BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
+                            ToolTip.Tip="Desktop-Widgets verwalten (Sensoren, Schalter)" />
+                    <Button Name="BtnNavMusic" Content="  🎵 Music Assistant" Background="Transparent" Foreground="#E0E0E0"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
+                            BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
+                            ToolTip.Tip="Music Assistant steuern (Suche, Warteschlange, Player, Lautstärke)" />
                     <Button Name="BtnNavSettings" Content="  ⚙️ Einstellungen" Background="Transparent" Foreground="#E0E0E0"
                             HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
                             BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"

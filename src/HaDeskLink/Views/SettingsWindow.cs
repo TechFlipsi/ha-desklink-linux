@@ -83,6 +83,11 @@ public class SettingsWindow : Window
     private TextBox _mqttFallbackBox = null!;
     private TextBlock _mqttStatusLabel = null!;
 
+    // ═══ Steuerlemente — Streaming (Sendspin) ═══
+    private CheckBox _streamEnabledCheck = null!;
+    private TextBox _streamPlayerNameBox = null!;
+    private TextBlock _streamStatusLabel = null!;
+
     // ═══ Layout-Panels für Navigation und Theme ═══
     private Border _sidebarPanel = null!;
     private Border _contentPanel = null!;
@@ -117,6 +122,16 @@ public class SettingsWindow : Window
     private static readonly JsonSerializerOptions _jsonOpts = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = false };
 
     private static SettingsWindow? _instance;
+
+    // Music-Assistant-Settings-Felder
+    private TextBox? _maHostBox;
+    private TextBox? _maPortBox;
+    private TextBox? _maTokenBox;
+    private TextBlock? _maTestResult;
+
+    // Widget-Editor-Felder (Phase D)
+    private ListBox? _widgetList;
+    private List<WidgetConfig> _widgets = new();
 
     public SettingsWindow(Config config, Action onReconnect, HaApiClient? api = null)
     {
@@ -167,6 +182,9 @@ public class SettingsWindow : Window
         _sectionPanels.Add(BuildHotkeysSection());
         _sectionPanels.Add(BuildMqttSection());
         _sectionPanels.Add(BuildQuickActionsSection());
+        _sectionPanels.Add(BuildMusicAssistantSection());
+        _sectionPanels.Add(BuildWidgetsSection());
+        _sectionPanels.Add(BuildStreamingSection());
 
         foreach (var section in _sectionPanels)
         {
@@ -198,6 +216,9 @@ public class SettingsWindow : Window
             (4, "⌨️ " + Localization.Get("settings_hotkeys", "Tastenkombinationen")),
             (5, "📡 " + Localization.Get("mqtt_settings")),
             (6, "⚡ " + Localization.Get("settings_quickactions")),
+            (7, "🎵 " + Localization.Get("ma_settings", "Music Assistant")),
+            (8, "🖥️ " + Localization.Get("ma_widgets", "Desktop-Widgets")),
+            (9, "🔊 " + Localization.Get("settings_streaming", "Streaming")),
         };
 
         var navStack = new StackPanel { Margin = new Thickness(0, 48, 0, 0) };
@@ -264,6 +285,11 @@ public class SettingsWindow : Window
         // Ausgewählte Section anzeigen
         if (index >= 0 && index < _sectionPanels.Count)
             _sectionPanels[index].IsVisible = true;
+
+        // Live-Status des Streaming-Clients auffrischen, wenn die Section
+        // geöffnet wird (Status kann sich laufend ändern).
+        if (index == 9)
+            UpdateStreamStatusLabel();
 
         // Sidebar-Buttons aktualisieren (ausgewählter = AccentBlue, weiße Schrift)
         for (int i = 0; i < _sidebarButtons.Count; i++)
@@ -707,6 +733,427 @@ public class SettingsWindow : Window
         return MakeSectionPanel(stack);
     }
 
+    // ─── Section 8: 🎵 Music Assistant ───
+    private Control BuildMusicAssistantSection()
+    {
+        var stack = new StackPanel { Spacing = 0 };
+        stack.Children.Add(MakeSectionHeader("🎵 " + Localization.Get("ma_settings", "Music Assistant")));
+
+        var table = MakeFieldGrid();
+
+        _maHostBox = new TextBox { Watermark = "192.168.178.76", MinHeight = 32 };
+        _maHostBox.SetValue(Avalonia.Controls.ToolTip.TipProperty, Localization.Get("ma_host_tooltip", "Host/IP deines Music-Assistant-Servers (TrueNAS-App oder HA-Add-on)"));
+        MakeFieldRow(table, 0, Localization.Get("ma_host", "MA-Host"), _maHostBox);
+        AddDescriptionRow(table, 1, "ma_host_desc");
+
+        _maPortBox = new TextBox { Text = "8095", MinHeight = 32 };
+        _maPortBox.SetValue(Avalonia.Controls.ToolTip.TipProperty, Localization.Get("ma_port_tooltip", "API-Port: 8095 (native), 30278 (TrueNAS-App)"));
+        MakeFieldRow(table, 2, Localization.Get("ma_port", "MA-Port"), _maPortBox);
+        AddDescriptionRow(table, 3, "ma_port_desc");
+
+        _maTokenBox = new TextBox { PasswordChar = '•', MinHeight = 32 };
+        _maTokenBox.SetValue(Avalonia.Controls.ToolTip.TipProperty, Localization.Get("ma_token_tooltip", "Long-lived access token aus der MA-Web-UI (Profil → Tokens)"));
+        MakeFieldRow(table, 3 + 1, Localization.Get("ma_token", "MA-Token"), _maTokenBox);
+        AddDescriptionRow(table, 5, "ma_token_desc");
+
+        _maTestResult = new TextBlock
+        {
+            Foreground = Brushes.White,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 8, 0, 0),
+            IsVisible = false
+        };
+        Grid.SetRow(_maTestResult, 6);
+        Grid.SetColumn(_maTestResult, 0);
+        Grid.SetColumnSpan(_maTestResult, 2);
+        table.Children.Add(_maTestResult);
+
+        stack.Children.Add(table);
+
+        var actionPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin = new Thickness(0, 12, 0, 0),
+            Spacing = 10
+        };
+        actionPanel.Children.Add(MakeButton("🧪 Verbindung testen",
+            new SolidColorBrush(Color.FromArgb(255, 0, 100, 180)), OnMaTestConnection,
+            Localization.Get("ma_test_tooltip", "Testet Host + Port + Token")));
+        stack.Children.Add(actionPanel);
+
+        return MakeSectionPanel(stack);
+    }
+
+    private async void OnMaTestConnection(object? s, RoutedEventArgs e)
+    {
+        if (_maTestResult == null) return;
+        var host = _maHostBox?.Text?.Trim() ?? "";
+        var portText = _maPortBox?.Text?.Trim() ?? "";
+        var token = _maTokenBox?.Text ?? "";
+        if (string.IsNullOrEmpty(host) || !int.TryParse(portText, out var port))
+        {
+            _maTestResult.Text = "❌ Bitte Host und Port angeben.";
+            _maTestResult.Foreground = new SolidColorBrush(Color.FromArgb(255, 231, 76, 60));
+            _maTestResult.IsVisible = true;
+            return;
+        }
+        _maTestResult.Text = "Teste Verbindung...";
+        _maTestResult.Foreground = Brushes.White;
+        _maTestResult.IsVisible = true;
+        try
+        {
+            var info = await MaManager.TestConnectionAsync(host, port, token);
+            _maTestResult.Text = $"✅ Verbunden: {info.Name} (MA v{info.ServerVersion})";
+            _maTestResult.Foreground = new SolidColorBrush(Color.FromArgb(255, 46, 204, 113));
+        }
+        catch (Exception ex)
+        {
+            _maTestResult.Text = $"❌ Fehlgeschlagen: {ex.Message}";
+            _maTestResult.Foreground = new SolidColorBrush(Color.FromArgb(255, 231, 76, 60));
+        }
+    }
+
+    private void SaveMaSettings()
+    {
+        if (_maHostBox == null || _maPortBox == null || _maTokenBox == null) return;
+        _config.MaHost = _maHostBox.Text?.Trim() ?? "";
+        if (int.TryParse(_maPortBox.Text, out var port)) _config.MaPort = port;
+        // Token nur überschreiben, wenn eines eingetragen wurde (Platzhalter-Schutz)
+        if (!string.IsNullOrEmpty(_maTokenBox.Text))
+            _config.MaToken = _maTokenBox.Text;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // WIDGET-EDITOR (Phase D)
+    // ═══════════════════════════════════════════════════════
+
+    // ─── Section 9: 🖥️ Desktop-Widgets ───
+    private Control BuildWidgetsSection()
+    {
+        var stack = new StackPanel { Spacing = 0 };
+        stack.Children.Add(MakeSectionHeader("🖥️ " + Localization.Get("ma_widgets", "Desktop-Widgets")));
+
+        stack.Children.Add(new TextBlock
+        {
+            Text = Localization.Get("desc_widgets_intro"),
+            FontSize = 11,
+            Foreground = DescGrayDark,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 4, 0, 8),
+            Tag = "desc",
+        });
+
+        // Entities laden (geteilt mit Quick Actions)
+        stack.Children.Add(MakeButton("📥 " + Localization.Get("widget_load_entities", "Entities laden"),
+            SuccessGreen, OnLoadEntities, Localization.Get("tooltip_load_entities")));
+
+        // Widget-Liste
+        _widgetList = new ListBox
+        {
+            MinHeight = 160,
+            MaxHeight = 260,
+            Margin = new Thickness(0, 8, 0, 8),
+        };
+        stack.Children.Add(_widgetList);
+        LoadWidgetsList();
+
+        // Add / Edit / Remove / Test Buttons
+        var editPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        editPanel.Children.Add(MakeButton("➕ " + Localization.Get("widget_add", "Hinzufügen"), SuccessGreen, OnAddWidget, Localization.Get("widget_add", "Widget hinzufügen")));
+        editPanel.Children.Add(MakeButton("✏️ " + Localization.Get("widget_edit", "Bearbeiten"), new SolidColorBrush(Color.FromArgb(255, 100, 100, 100)), OnEditWidget, Localization.Get("widget_edit", "Widget bearbeiten")));
+        editPanel.Children.Add(MakeButton("🗑️ " + Localization.Get("widget_remove", "Entfernen"), WarningOrange, OnRemoveWidget, Localization.Get("widget_remove", "Widget entfernen")));
+        editPanel.Children.Add(MakeButton("🧪 " + Localization.Get("widget_test", "Widget testen"), new SolidColorBrush(Color.FromArgb(255, 0, 100, 180)), OnTestWidget, Localization.Get("widget_test", "Widget testen")));
+        stack.Children.Add(editPanel);
+
+        return MakeSectionPanel(stack);
+    }
+
+    private void LoadWidgetsList()
+    {
+        if (_widgetList == null) return;
+        _widgetList.Items.Clear();
+        _widgets = WidgetManager.LoadWidgets(_config);
+        foreach (var w in _widgets)
+        {
+            var typeLabel = w.Type switch
+            {
+                "multi_toggle" => Localization.Get("widget_multi_toggle", "Multi-Schalter"),
+                "toggle" => Localization.Get("widget_toggles", "Schalter"),
+                _ => Localization.Get("widget_sensors", "Sensor"),
+            };
+            var name = string.IsNullOrEmpty(w.Name)
+                ? (w.Type == "multi_toggle" ? string.Join(", ", w.Entities) : w.EntityId)
+                : w.Name;
+            _widgetList.Items.Add($"[{typeLabel}] {name}");
+        }
+    }
+
+    private void OnAddWidget(object? sender, RoutedEventArgs e)
+    {
+        _ = ShowEditWidgetDialogAsync(null);
+    }
+
+    private void OnEditWidget(object? sender, RoutedEventArgs e)
+    {
+        if (_widgetList == null || _widgetList.SelectedIndex < 0)
+        {
+            ShowValidationMessage(Localization.Get("settings_qa_select_first", "Bitte erst einen Eintrag auswählen"), "HA DeskLink");
+            return;
+        }
+        _ = ShowEditWidgetDialogAsync(_widgetList.SelectedIndex);
+    }
+
+    private void OnRemoveWidget(object? sender, RoutedEventArgs e)
+    {
+        if (_widgetList == null || _widgetList.SelectedIndex < 0)
+        {
+            ShowValidationMessage(Localization.Get("settings_qa_select_first", "Bitte erst einen Eintrag auswählen"), "HA DeskLink");
+            return;
+        }
+        var idx = _widgetList.SelectedIndex;
+        if (idx < _widgets.Count)
+        {
+            _widgets.RemoveAt(idx);
+            _config.Widgets = WidgetManager.SerializeWidgets(_widgets);
+            _config.Save();
+            LoadWidgetsList();
+        }
+    }
+
+    private void OnTestWidget(object? sender, RoutedEventArgs e)
+    {
+        if (_widgetList == null || _widgetList.SelectedIndex < 0)
+        {
+            ShowValidationMessage(Localization.Get("settings_qa_select_first", "Bitte erst einen Eintrag auswählen"), "HA DeskLink");
+            return;
+        }
+        var idx = _widgetList.SelectedIndex;
+        if (idx < _widgets.Count)
+        {
+            // Live preview on the desktop layer; ESC or ✕ closes it.
+            WidgetManager.ShowTestWidget(_widgets[idx], _config);
+            _statusLabel.Text = "✓ " + Localization.Get("widget_test", "Widget testen");
+        }
+    }
+
+    /// <summary>
+    /// Add (idx == null) or edit (idx != null) a widget in a modal dialog:
+    /// type, name, entity/entities, monitor, X/Y offset, click-through.
+    /// </summary>
+    private async Task ShowEditWidgetDialogAsync(int? idx)
+    {
+        var widgets = _widgets;
+        var widget = idx != null && idx < widgets.Count ? widgets[idx!.Value] : null;
+
+        var typeBox = new ComboBox { MinHeight = 32, HorizontalAlignment = HorizontalAlignment.Stretch };
+        typeBox.Items.Add("🌡 " + Localization.Get("widget_sensors", "Sensor-Karte"));
+        typeBox.Items.Add("⏻ " + Localization.Get("widget_toggles", "Schalter-Karte"));
+        typeBox.Items.Add("⚙ " + Localization.Get("widget_multi_toggle", "Multi-Schalter-Karte"));
+        typeBox.SelectedIndex = widget?.Type switch
+        {
+            "toggle" => 1,
+            "multi_toggle" => 2,
+            _ => 0,
+        };
+
+        var nameBox = new TextBox { MinHeight = 32, Text = widget?.Name ?? "" };
+
+        // Single entity combo (sensor + toggle)
+        var entityCombo = new ComboBox { MinHeight = 32, HorizontalAlignment = HorizontalAlignment.Stretch };
+        foreach (var (entityId, friendlyName) in _entities)
+            entityCombo.Items.Add(new EntityItem(entityId, friendlyName));
+        if (entityCombo.Items.Count > 0) entityCombo.SelectedIndex = 0;
+        if (widget != null)
+        {
+            for (int i = 0; i < entityCombo.Items.Count; i++)
+            {
+                if (entityCombo.Items[i] is EntityItem ei && ei.EntityId == widget.EntityId)
+                {
+                    entityCombo.SelectedIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Multi-toggle: up to 4 entity combos
+        var multiCombos = new List<ComboBox>();
+        for (int i = 0; i < 4; i++)
+        {
+            var combo = new ComboBox { MinHeight = 32, HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 2, 0, 2) };
+            combo.Items.Add(new EntityItem("", "—"));
+            foreach (var (entityId, friendlyName) in _entities)
+                combo.Items.Add(new EntityItem(entityId, friendlyName));
+            combo.SelectedIndex = 0;
+            if (widget != null && i < widget.Entities.Count)
+            {
+                for (int j = 0; j < combo.Items.Count; j++)
+                {
+                    if (combo.Items[j] is EntityItem ei && ei.EntityId == widget.Entities[i])
+                    {
+                        combo.SelectedIndex = j;
+                        break;
+                    }
+                }
+            }
+            multiCombos.Add(combo);
+        }
+
+        var monitorBox = new ComboBox { MinHeight = 32, HorizontalAlignment = HorizontalAlignment.Stretch };
+        var screens = Screens.All.ToList();
+        for (int i = 0; i < screens.Count; i++)
+        {
+            var label = i == 0
+                ? $"{Localization.Get("settings_notif_primary_monitor")} ({screens[i].DisplayName ?? (i + 1).ToString()})"
+                : $"Monitor {i + 1} ({screens[i].DisplayName ?? (i + 1).ToString()})";
+            monitorBox.Items.Add(label);
+        }
+        if (monitorBox.Items.Count == 0)
+            monitorBox.Items.Add(Localization.Get("settings_notif_primary_monitor"));
+        monitorBox.SelectedIndex = Math.Min(widget?.Monitor ?? 0, monitorBox.Items.Count - 1);
+
+        var offsetXBox = new NumericUpDown { MinHeight = 32, Value = widget?.OffsetX ?? 20, Minimum = -200, Maximum = 10000, FormatString = "0" };
+        var offsetYBox = new NumericUpDown { MinHeight = 32, Value = widget?.OffsetY ?? 20, Minimum = -200, Maximum = 10000, FormatString = "0" };
+        var clickThroughCheck = new CheckBox { Content = Localization.Get("widget_click_through", "Klick-Durchlass"), IsChecked = widget?.ClickThrough ?? false };
+
+        // ── Dialog-Layout ──
+        var table = new Grid { Margin = new Thickness(16), RowDefinitions = new RowDefinitions("Auto,8,Auto,8,Auto,8,Auto,8,Auto,Auto,8,Auto,Auto,Auto,Auto,Auto") };
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        int row = 0;
+        void AddRow(string label, Control input)
+        {
+            var lbl = new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetRow(lbl, row); Grid.SetColumn(lbl, 0);
+            Grid.SetRow(input, row); Grid.SetColumn(input, 1);
+            table.Children.Add(lbl);
+            table.Children.Add(input);
+            row += 2;
+        }
+
+        AddRow(Localization.Get("widget_type", "Typ") + ":", typeBox);
+        AddRow(Localization.Get("widget_name", "Name") + ":", nameBox);
+
+        // Single-entity rows (sensor/toggle)
+        var lblEntity = new TextBlock { Text = Localization.Get("widget_entity", "Entity") + ":", VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetRow(lblEntity, 4); Grid.SetColumn(lblEntity, 0);
+        Grid.SetRow(entityCombo, 4); Grid.SetColumn(entityCombo, 1);
+        table.Children.Add(lblEntity);
+        table.Children.Add(entityCombo);
+
+        // Multi rows (multi_toggle)
+        var lblEntities = new TextBlock { Text = Localization.Get("widget_entities", "Entities (2-4)") + ":", VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetRow(lblEntities, 6); Grid.SetColumn(lblEntities, 0);
+        table.Children.Add(lblEntities);
+        var multiStack = new StackPanel();
+        foreach (var c in multiCombos) multiStack.Children.Add(c);
+        Grid.SetRow(multiStack, 6); Grid.SetColumn(multiStack, 1);
+        table.Children.Add(multiStack);
+
+        AddRow(Localization.Get("widget_monitor", "Monitor") + ":", monitorBox);
+        var offsetPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        offsetPanel.Children.Add(offsetXBox);
+        offsetPanel.Children.Add(offsetYBox);
+        AddRow(Localization.Get("widget_offset", "Versatz (X/Y)") + ":", offsetPanel);
+
+        Grid.SetRow(clickThroughCheck, row);
+        Grid.SetColumn(clickThroughCheck, 0);
+        Grid.SetColumnSpan(clickThroughCheck, 2);
+        table.Children.Add(clickThroughCheck);
+
+        var btnPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
+        var saveBtn = MakeButton("💾 " + Localization.Get("settings_save", "Speichern"), AccentBlue, (s, e2) => { });
+        saveBtn.MinWidth = 100;
+        var cancelBtn = MakeButton(Localization.Get("setup_cancel", "Abbrechen"), new SolidColorBrush(Color.FromArgb(255, 100, 100, 100)), (s, e2) => { });
+        cancelBtn.MinWidth = 100;
+        btnPanel.Children.Add(saveBtn);
+        btnPanel.Children.Add(cancelBtn);
+        Grid.SetRow(btnPanel, row + 1);
+        Grid.SetColumnSpan(btnPanel, 2);
+        table.Children.Add(btnPanel);
+
+        // Type switch → show single-entity vs multi rows
+        void UpdateTypeVisibility()
+        {
+            var isMulti = typeBox.SelectedIndex == 2;
+            lblEntity.IsVisible = !isMulti;
+            entityCombo.IsVisible = !isMulti;
+            lblEntities.IsVisible = isMulti;
+            multiStack.IsVisible = isMulti;
+        }
+        typeBox.SelectionChanged += (s, e2) => UpdateTypeVisibility();
+        UpdateTypeVisibility();
+
+        var dialog = new Window
+        {
+            Title = widget == null
+                ? Localization.Get("widget_add", "Widget hinzufügen")
+                : Localization.Get("widget_edit", "Widget bearbeiten"),
+            Width = 520,
+            Height = 560,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ShowInTaskbar = false,
+            Content = new ScrollViewer { Content = table },
+        };
+        ApplyThemeToWindow(dialog, _config.Theme);
+
+        var closed = new TaskCompletionSource<bool>();
+        saveBtn.Click += (s, e2) =>
+        {
+            var type = typeBox.SelectedIndex switch { 1 => "toggle", 2 => "multi_toggle", _ => "sensor" };
+            var cfg = new WidgetConfig
+            {
+                Type = type,
+                Name = nameBox.Text?.Trim() ?? "",
+                Monitor = Math.Max(0, monitorBox.SelectedIndex),
+                OffsetX = (int)(offsetXBox.Value ?? 20),
+                OffsetY = (int)(offsetYBox.Value ?? 20),
+                ClickThrough = clickThroughCheck.IsChecked ?? false,
+            };
+
+            if (type == "multi_toggle")
+            {
+                foreach (var c in multiCombos)
+                {
+                    if (c.SelectedItem is EntityItem item && !string.IsNullOrEmpty(item.EntityId))
+                        cfg.Entities.Add(item.EntityId);
+                }
+                if (cfg.Entities.Count < 2)
+                {
+                    // validation error — keep dialog open
+                    return;
+                }
+                cfg.EntityId = cfg.Entities[0];
+            }
+            else
+            {
+                if (entityCombo.SelectedItem is EntityItem item && !string.IsNullOrEmpty(item.EntityId))
+                    cfg.EntityId = item.EntityId;
+                else
+                {
+                    // validation error — keep dialog open
+                    return;
+                }
+            }
+
+            if (idx != null && idx < widgets.Count)
+                widgets[idx!.Value] = cfg;
+            else
+                widgets.Add(cfg);
+
+            _config.Widgets = WidgetManager.SerializeWidgets(widgets);
+            _config.Save();
+            LoadWidgetsList();
+            closed.TrySetResult(true);
+        };
+        cancelBtn.Click += (s, e2) => closed.TrySetResult(false);
+        dialog.Closed += (s, e2) => closed.TrySetResult(false);
+
+        await dialog.ShowDialog(this);
+        await closed.Task;
+    }
+
     // ─── Section 7: ⚡ Quick Actions ───
     private Control BuildQuickActionsSection()
     {
@@ -754,6 +1201,88 @@ public class SettingsWindow : Window
         stack.Children.Add(editPanel);
 
         return MakeSectionPanel(stack);
+    }
+
+    // ─── Section 10: 🔊 Streaming (Sendspin) ───
+    private Control BuildStreamingSection()
+    {
+        var stack = new StackPanel { Spacing = 0 };
+        stack.Children.Add(MakeSectionHeader("🔊 " + Localization.Get("settings_streaming", "Streaming")));
+
+        var table = MakeFieldGrid();
+
+        // Enable toggle
+        _streamEnabledCheck = new CheckBox
+        {
+            Content = Localization.Get("stream_enabled", "Audio-Streaming aktivieren (Sendspin-Player)"),
+            IsChecked = _config.SendspinEnabled,
+            MinHeight = 32,
+        };
+        MakeFieldRow(table, 0, Localization.Get("stream_toggle", "Streaming"), _streamEnabledCheck);
+        AddDescriptionRow(table, 1, "stream_toggle_desc");
+
+        // Player name
+        _streamPlayerNameBox = new TextBox
+        {
+            Text = string.IsNullOrEmpty(_config.SendspinPlayerName) ? "HA DeskLink" : _config.SendspinPlayerName,
+            MinHeight = 32,
+        };
+        _streamPlayerNameBox.SetValue(Avalonia.Controls.ToolTip.TipProperty,
+            Localization.Get("stream_player_name_tooltip", "Name unter dem dieser Player in Music Assistant erscheint"));
+        MakeFieldRow(table, 2, Localization.Get("stream_player_name", "Player-Name"), _streamPlayerNameBox);
+        AddDescriptionRow(table, 3, "stream_player_name_desc");
+
+        // Live status
+        _streamStatusLabel = new TextBlock
+        {
+            Text = "",
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 6, 0, 0),
+        };
+        Grid.SetRow(_streamStatusLabel, 4);
+        Grid.SetColumn(_streamStatusLabel, 0);
+        Grid.SetColumnSpan(_streamStatusLabel, 2);
+        table.Children.Add(_streamStatusLabel);
+
+        stack.Children.Add(table);
+        UpdateStreamStatusLabel();
+
+        return MakeSectionPanel(stack);
+    }
+
+    private void UpdateStreamStatusLabel()
+    {
+        if (_streamStatusLabel == null) return;
+        var status = HaDeskLink.Sendspin.SendspinManager.Status;
+        string key = status switch
+        {
+            HaDeskLink.Sendspin.SendspinStatus.Disabled => "stream_status_disabled",
+            HaDeskLink.Sendspin.SendspinStatus.Connecting => "stream_status_connecting",
+            HaDeskLink.Sendspin.SendspinStatus.Handshaking => "stream_status_handshaking",
+            HaDeskLink.Sendspin.SendspinStatus.Synchronizing => "stream_status_synchronizing",
+            HaDeskLink.Sendspin.SendspinStatus.Streaming => "stream_status_streaming",
+            HaDeskLink.Sendspin.SendspinStatus.Disconnected => "stream_status_disconnected",
+            _ => "stream_status_error",
+        };
+        var text = Localization.Get(key);
+        if (status == HaDeskLink.Sendspin.SendspinStatus.Error)
+        {
+            var err = HaDeskLink.Sendspin.SendspinManager.LastError;
+            if (!string.IsNullOrEmpty(err)) text += $": {err}";
+        }
+        _streamStatusLabel.Text = text;
+    }
+
+    private void SaveStreamingSettings()
+    {
+        if (_streamEnabledCheck == null || _streamPlayerNameBox == null) return;
+        _config.SendspinEnabled = _streamEnabledCheck.IsChecked ?? false;
+        var name = _streamPlayerNameBox.Text?.Trim() ?? "";
+        _config.SendspinPlayerName = string.IsNullOrEmpty(name) ? "HA DeskLink" : name;
+        // Apply immediately: starts/stops/restarts the session as needed.
+        try { HaDeskLink.Sendspin.SendspinManager.Start(_config); }
+        catch { }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -866,6 +1395,9 @@ public class SettingsWindow : Window
 
         _config.Theme = _themeBox.SelectedIndex switch { 1 => "light", 2 => "dark", _ => "system" };
 
+        SaveMaSettings();
+        SaveStreamingSettings();
+
         // Benachrichtigungs-Position
         _config.NotificationPosition = _notifPosBox.SelectedIndex switch
         {
@@ -945,7 +1477,7 @@ public class SettingsWindow : Window
             Localization.Get("settings_reregister_sensors"));
         if (confirmed)
         {
-            Task.Run(() =>
+            _ = Task.Run(() =>
             {
                 try { DeskLinkApp.ReRegisterSensors(); }
                 catch { }
@@ -1139,7 +1671,7 @@ public class SettingsWindow : Window
             }
         };
         ApplyThemeToWindow(dialog, _config.Theme);
-        var okBtn = (Button)((StackPanel)((Border)dialog.Content).Child).Children.OfType<Button>().First();
+        var okBtn = (Button)((StackPanel)((Border)dialog.Content!).Child!).Children.OfType<Button>().First();
         okBtn.Click += (s, e) => dialog.Close();
         await dialog.ShowDialog(this);
     }
@@ -1351,6 +1883,12 @@ public class SettingsWindow : Window
         _languageBox.SelectedIndex = currentLangIndex;
 
         _themeBox.SelectedIndex = _config.Theme switch { "light" => 1, "dark" => 2, _ => 0 };
+
+        // Music-Assistant-Settings
+        _maHostBox!.Text = _config.MaHost;
+        _maPortBox!.Text = _config.MaPort.ToString();
+        _maTokenBox!.Text = _config.MaToken; // decrypted by Config.Load
+
 
         // Benachrichtigungs-Position
         _notifPosBox.SelectedIndex = _config.NotificationPosition switch

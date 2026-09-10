@@ -1,5 +1,28 @@
 # Changelog
 
+## [v5.0.5] - 2026-09-10
+
+### 🎵 Music Assistant Integration (neu)
+- **MA voll nativ in der App** – Music Assistant direkt in HA DeskLink steuern, ohne die MA-Web-UI: Suche über die komplette Bibliothek (Spotify, YouTube Music, TuneIn, lokale Dateien), Warteschlange anzeigen und umsortieren, Play/Pause/Next/Previous, Lautstärke, Shuffle/Repeat
+- **Player-Auswahl in der Sidebar** – alle MA-Player (Badezimmer, Büro, Küche, Denon-AVR, Chromecast…) live mit Abspielstatus
+- **Verbindungstest** – Einstellungen → Music Assistant: Host + Port + Token eintragen, Button testet die Verbindung sofort (funktioniert mit MA auf TrueNAS, als HA-Add-on oder Standalone)
+- **Token verschlüsselt gespeichert** (AES, machine-keyed) — wie beim HA-Token
+- **Live-Updates per Push** – Player- und Queue-Änderungen erscheinen sofort, ohne Neuladen
+
+### 🧩 Desktop-Widgets (neu)
+- **Sensor-Karten direkt am Desktop** – z.B. Büro-Temperatur als kleine Karte, live aktualisiert, hinter allen Fenstern (wie ein Wallpaper)
+- **Schalter-Karten** – Einzeltoggle oder 2–4 Schalter in einer Karte
+- **Multi-Monitor-fähig** – Widgets auf Monitor 2/3 bleiben beim Zocken am Hauptmonitor sichtbar und aktualisieren weiter
+- **Klick-Durchlässigkeit** – reine Anzeige-Widgets blockieren keine Klicks im Spiel/Programm (konfigurierbar pro Widget)
+- **Widget-Editor** – Einstellungen → Widgets: anlegen, positionieren, testen
+
+### 🌍 i18n
+- Neue Keys (`ma_*`, `widget_*`, `stream_*`) in alle 16 Sprachen übernommen
+
+### 🐛 Bugfixes & Maintenance
+- **WebView-DLL-Versionskonflikt gefixt** – Avalonia auf 11.3.1 + kompatible WebView-Cross-Pakete (Start-Crash "IViewHandlerProvider" behoben)
+- Null-Warnings in SettingsWindow bereinigt
+
 ## [v5.0.4] - 2026-09-08
 
 ### ✨ UI-Redesign (Port von Windows v5.0.1–v5.0.4)
