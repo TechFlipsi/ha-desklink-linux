@@ -47,6 +47,11 @@ public class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow();
+
+            // Desktop-Widgets starten (falls konfiguriert)
+            try { WidgetManager.Start(CurrentConfig); } catch { }
+            // Sendspin-Streaming-Client starten (falls konfiguriert)
+            try { Sendspin.SendspinManager.Start(CurrentConfig); } catch { }
             desktop.MainWindow.Title = $"HA DeskLink Linux v{HaApiClient.GetVersion()}";
             if (CurrentConfig != null)
             {

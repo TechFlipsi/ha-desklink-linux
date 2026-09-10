@@ -64,6 +64,13 @@ public class Config
     /// Quick Actions: JSON array of { entityId, name } objects.
     /// </summary>
     public string QuickActions { get; set; } = "[]";
+
+    /// <summary>
+    /// Desktop Widgets (Phase D): JSON array of WidgetConfig objects:
+    /// { type: "sensor"|"toggle"|"multi_toggle", name, entityId, entities: [...],
+    ///   monitor, offsetX, offsetY, clickThrough }
+    /// </summary>
+    public string Widgets { get; set; } = "[]";
     /// <summary>
     /// Encrypted HA token. When set, HaToken is cleared.
     /// If empty, HaToken is used (migration from old config).
@@ -94,6 +101,23 @@ public class Config
     /// Monitor index for notifications (0 = primary, 1+ = specific monitor). Default: 0
     /// </summary>
     public int NotificationMonitor { get; set; } = 0;
+
+    // Music Assistant (optional)
+    /// <summary>MA host/IP (empty = MA integration disabled).</summary>
+    public string MaHost { get; set; } = "";
+    /// <summary>MA API port (TrueNAS-App style: 30278; native installs: 8095).</summary>
+    public int MaPort { get; set; } = 8095;
+    /// <summary>MA long-lived access token (runtime only, never saved plaintext).</summary>
+    public string MaToken { get; set; } = "";
+    public string? MaTokenEncrypted { get; set; }
+
+    // Sendspin streaming (Phase E): play MA audio on this PC's speakers.
+    /// <summary>Sendspin streaming enabled (player role on the MA server).</summary>
+    public bool SendspinEnabled { get; set; } = false;
+    /// <summary>Sendspin port on the MA host (MA serves ws://host:8927/sendspin).</summary>
+    public int SendspinPort { get; set; } = 8927;
+    /// <summary>Player name this client registers as on the Sendspin server.</summary>
+    public string SendspinPlayerName { get; set; } = "HA DeskLink";
 
     /// <summary>
     /// Custom Commands: JSON-Array von benutzerdefinierten Skripten/Befehlen
@@ -289,6 +313,21 @@ public class Config
                 config.MqttPassword = decrypted;
         }
 
+        // Migration: if MaTokenEncrypted is empty but MaToken has a value,
+        // encrypt MaToken and clear the plaintext
+        if (string.IsNullOrEmpty(config.MaTokenEncrypted) && !string.IsNullOrEmpty(config.MaToken))
+        {
+            config.MaTokenEncrypted = EncryptString(config.MaToken);
+            config.MaToken = "";
+            config.Save();
+        }
+        else if (!string.IsNullOrEmpty(config.MaTokenEncrypted))
+        {
+            var decrypted = DecryptString(config.MaTokenEncrypted);
+            if (!string.IsNullOrEmpty(decrypted))
+                config.MaToken = decrypted;
+        }
+
         return config;
     }
 
@@ -309,6 +348,17 @@ public class Config
             MqttPasswordEncrypted = EncryptString(MqttPassword);
         }
 
+        if (!string.IsNullOrEmpty(MaToken))
+        {
+            MaTokenEncrypted = EncryptString(MaToken);
+        }
+        else
+        {
+            // Token was cleared (or decryption failed on load) — also drop the
+            // stale ciphertext so a cleared token really stays cleared.
+            MaTokenEncrypted = null;
+        }
+
         var saveConfig = new Config
         {
             HaUrl = HaUrl,
@@ -320,6 +370,7 @@ public class Config
             Language = Language,
             HaTokenEncrypted = HaTokenEncrypted,
             QuickActions = QuickActions,
+            Widgets = Widgets,
             Theme = Theme,
             HotkeyModifiers = HotkeyModifiers,
             HotkeyKey = HotkeyKey,
@@ -336,6 +387,13 @@ public class Config
             MqttUseSsl = MqttUseSsl,
             MqttAutoConfigured = MqttAutoConfigured,
             MqttBrokerFallback = MqttBrokerFallback,
+            MaHost = MaHost,
+            MaPort = MaPort,
+            MaToken = "", // NEVER save plaintext token
+            MaTokenEncrypted = MaTokenEncrypted,
+            SendspinEnabled = SendspinEnabled,
+            SendspinPort = SendspinPort,
+            SendspinPlayerName = SendspinPlayerName,
             CustomCommands = CustomCommands,
             AppLaunchers = AppLaunchers,
             NotificationPosition = NotificationPosition,

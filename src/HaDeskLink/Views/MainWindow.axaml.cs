@@ -61,6 +61,8 @@ public partial class MainWindow : Window
         // Sidebar navigation buttons
         WireSidebarButton("BtnNavDashboard", OnNavDashboard);
         WireSidebarButton("BtnNavQuickActions", OnNavQuickActions);
+        WireSidebarButton("BtnNavMusic", OnNavMusic);
+        WireSidebarButton("BtnNavWidgets", OnNavWidgets);
         WireSidebarButton("BtnNavSettings", OnNavSettings);
         WireSidebarButton("BtnNavRefresh", OnNavRefresh);
         WireSidebarButton("BtnNavDiscord", (s, e) => OpenUrl("https://discord.com/invite/zHPhQ7EaqH"));
@@ -372,6 +374,25 @@ public partial class MainWindow : Window
     }
 
     private void OnNavSettings(object? sender, RoutedEventArgs e)
+    {
+        var config = Config.Load();
+        SettingsWindow.Open(config, Reconnect, new HaApiClient(Config.GetConfigDir(), config.VerifySsl));
+    }
+
+    private void OnNavMusic(object? sender, RoutedEventArgs e)
+    {
+        var config = Config.Load();
+        if (string.IsNullOrWhiteSpace(config.MaHost))
+        {
+            // MA nicht konfiguriert → Settings öffnen (dort ist der MA-Abschnitt)
+            SettingsWindow.Open(config, Reconnect, new HaApiClient(Config.GetConfigDir(), config.VerifySsl));
+            return;
+        }
+        var musicWin = new MusicWindow(config);
+        musicWin.Show();
+    }
+
+    private void OnNavWidgets(object? sender, RoutedEventArgs e)
     {
         var config = Config.Load();
         SettingsWindow.Open(config, Reconnect, new HaApiClient(Config.GetConfigDir(), config.VerifySsl));
