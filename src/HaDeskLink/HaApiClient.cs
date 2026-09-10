@@ -292,6 +292,44 @@ public class HaApiClient
         return entities;
     }
 
+    /// <summary>
+    /// Get the current states of all entities as a dictionary.
+    /// Used by the desktop widgets (Phase D): entityId → (state, friendly_name, unit).
+    /// </summary>
+    public async Task<Dictionary<string, (string state, string friendlyName, string unit)>?> GetEntityStatesAsync()
+    {
+        if (string.IsNullOrEmpty(_haUrl) || string.IsNullOrEmpty(_token))
+            throw new InvalidOperationException("Not connected to HA");
+
+        var url = $"{_haUrl}/api/states";
+        var req = new HttpRequestMessage(HttpMethod.Get, url);
+        req.Headers.Add("Authorization", $"Bearer {_token}");
+        var resp = await _http.SendAsync(req);
+        resp.EnsureSuccessStatusCode();
+
+        var json = await resp.Content.ReadAsStringAsync();
+        var states = new Dictionary<string, (string, string, string)>();
+        using var doc = JsonDocument.Parse(json);
+        foreach (var item in doc.RootElement.EnumerateArray())
+        {
+            var entityId = item.TryGetProperty("entity_id", out var eid) ? eid.GetString() ?? "" : "";
+            if (string.IsNullOrEmpty(entityId)) continue;
+
+            var state = item.TryGetProperty("state", out var st) ? st.GetString() ?? "" : "";
+            var friendlyName = "";
+            var unit = "";
+            if (item.TryGetProperty("attributes", out var attrs))
+            {
+                if (attrs.TryGetProperty("friendly_name", out var fn))
+                    friendlyName = fn.GetString() ?? "";
+                if (attrs.TryGetProperty("unit_of_measurement", out var um))
+                    unit = um.GetString() ?? "";
+            }
+            states[entityId] = (state, friendlyName, unit);
+        }
+        return states;
+    }
+
     public async Task UploadScreenshotAsync(string filePath)
     {
         if (string.IsNullOrEmpty(_haUrl) || string.IsNullOrEmpty(_token)) return;
