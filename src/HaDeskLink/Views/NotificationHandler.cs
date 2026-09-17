@@ -39,8 +39,9 @@ public static class NotificationHandler
             string title = "HA DeskLink";
             string message = "";
             string? command = null;
-            List<NotificationActionInfo>? actions = null;
             string? commandOnAction = null;
+            string? imageUrl = null;
+            List<NotificationActionInfo>? actions = null;
 
             if (root.TryGetProperty("title", out var t1)) title = t1.GetString() ?? title;
             if (root.TryGetProperty("message", out var m1)) message = m1.GetString() ?? "";
@@ -52,6 +53,11 @@ public static class NotificationHandler
                 if (data.TryGetProperty("message", out var m2)) message = m2.GetString() ?? message;
                 if (data.TryGetProperty("command", out var c2)) command = c2.GetString();
                 if (data.TryGetProperty("command_on_action", out var coa)) commandOnAction = coa.GetString();
+                // Companion-style image: data.image, or data.attachment.url override
+                if (data.TryGetProperty("image", out var img)) imageUrl = img.GetString();
+                if (data.TryGetProperty("attachment", out var att) &&
+                    att.TryGetProperty("url", out var attUrl))
+                    imageUrl = attUrl.GetString() ?? imageUrl;
                 if (data.TryGetProperty("actions", out var actionsArr))
                 {
                     actions = new List<NotificationActionInfo>();
@@ -87,9 +93,10 @@ public static class NotificationHandler
 
             if (!string.IsNullOrEmpty(message))
             {
+                var image = TryLoadImage(imageUrl);
                 ShowOnUiThread(() =>
                 {
-                    NotificationPopup.ShowNotification(title, message, actions);
+                    NotificationPopup.ShowNotification(title, message, actions, image: image);
                 });
                 return true;
             }
@@ -106,9 +113,34 @@ public static class NotificationHandler
     /// <summary>
     /// Show a plain notification toast (no action buttons).
     /// </summary>
-    public static void ShowNotification(string title, string message)
+    public static void ShowNotification(string title, string message,
+        List<NotificationActionInfo>? actions = null, NotificationImageLoader.ImageResult? image = null)
     {
-        ShowOnUiThread(() => NotificationPopup.ShowNotification(title, message));
+        ShowOnUiThread(() => NotificationPopup.ShowNotification(title, message, actions, image: image));
+    }
+
+    /// <summary>
+    /// Resolves an HA companion-style image reference to a local file.
+    /// Returns null (with log line) when no image or on failure.
+    /// </summary>
+    internal static NotificationImageLoader.ImageResult? TryLoadImage(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl)) return null;
+        try
+        {
+            var config = Config.Load();
+            var token = string.IsNullOrEmpty(config.HaToken)
+                     ? Environment.GetEnvironmentVariable("HA_TOKEN")
+                       ?? Environment.GetEnvironmentVariable("HASS_TOKEN")
+                       ?? string.Empty
+                     : config.HaToken;
+            var result = NotificationImageLoader.Load(imageUrl, config.HaUrl, token);
+            if (result.LocalPath != null)
+                return result;
+            Console.WriteLine($"[Notification] Image load failed: {result.Error}");
+        }
+        catch (Exception ex) { Console.WriteLine($"[Notification] Image error: {ex.Message}"); }
+        return null;
     }
 
     /// <summary>

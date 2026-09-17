@@ -31,11 +31,14 @@ public class NotificationPopup : Window
     public static readonly IBrush ButtonGreenHoverBrush = SolidColorBrush.Parse("#66BB6A");
 
     private readonly IBrush _accentBrush;
+    private readonly NotificationImageLoader.ImageResult? _image;
 
-    public NotificationPopup(string title, string message, List<NotificationActionInfo>? actions = null, IBrush? accentBrush = null)
+    public NotificationPopup(string title, string message, List<NotificationActionInfo>? actions = null, IBrush? accentBrush = null,
+        NotificationImageLoader.ImageResult? image = null)
     {
         _accentBrush = accentBrush ?? AccentBlueBrush;
         var hoverBrush = _accentBrush == AccentGreenBrush ? ButtonGreenHoverBrush : ButtonHoverBrush;
+        _image = image;
 
         CanResize = false;
         ShowInTaskbar = false;
@@ -74,7 +77,7 @@ public class NotificationPopup : Window
         Content = card;
 
         // ── Auto-close timer (pauses on hover, restarts on leave) ──
-        _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+        _autoCloseTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(image != null ? 12 : 8) };
         _autoCloseTimer.Tick += (s, e) =>
         {
             _autoCloseTimer!.Stop();
@@ -132,6 +135,63 @@ public class NotificationPopup : Window
             TextWrapping = TextWrapping.Wrap,
             MaxLines = 5
         });
+
+        // ── Image preview (companion-style camera snapshot etc.) ──
+        if (_image != null && _image.LocalPath != null && System.IO.File.Exists(_image.LocalPath))
+        {
+            try
+            {
+                var pic = new Avalonia.Controls.Image
+                {
+                    Source = new Avalonia.Media.Imaging.Bitmap(_image.LocalPath),
+                    MaxWidth = 348,
+                    MaxHeight = 190,
+                    Stretch = Stretch.Uniform,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    Cursor = new Cursor(StandardCursorType.Hand),
+                    Tag = _image.LocalPath
+                };
+                pic.PointerPressed += (s, e) =>
+                {
+                    try
+                    {
+                        var path = (string)((Avalonia.Controls.Image)s!).Tag!;
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = "xdg-open",
+                            Arguments = $"\"{path}\"",
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex) { Console.WriteLine($"[Notification] Image open failed: {ex.Message}"); }
+                };
+                stack.Children.Add(pic);
+            }
+            catch (Exception ex)
+            {
+                // No silent fallback: load error gets a visible hint in the toast
+                stack.Children.Add(new TextBlock
+                {
+                    Text = "[Bild konnte nicht geladen werden: " + (_image.Error ?? "unbekannt") + "]",
+                    FontSize = 11,
+                    FontStyle = FontStyle.Italic,
+                    Foreground = new SolidColorBrush(Color.Parse("#DC8264")),
+                    TextWrapping = TextWrapping.Wrap
+                });
+                Console.WriteLine($"[Notification] Image render failed: {ex.Message}");
+            }
+        }
+        else if (_image != null && _image.LocalPath == null)
+        {
+            // Download failed: visible hint, not a silent drop (Sir-Regel: kein stiller Fallback)
+            stack.Children.Add(new TextBlock
+            {
+                Text = "[Bild konnte nicht geladen werden" + (_image.Error != null ? ": " + _image.Error : "") + "]",
+                FontSize = 11,
+                Foreground = new SolidColorBrush(Color.Parse("#DC8264")),
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
 
         // ── Timestamp ──
         stack.Children.Add(new TextBlock
@@ -224,9 +284,9 @@ public class NotificationPopup : Window
     /// <summary>
     /// Show a standard notification with blue accent, positioned per config.
     /// </summary>
-    public static NotificationPopup ShowNotification(string title, string message, List<NotificationActionInfo>? actions = null)
+    public static NotificationPopup ShowNotification(string title, string message, List<NotificationActionInfo>? actions = null, NotificationImageLoader.ImageResult? image = null)
     {
-        var popup = new NotificationPopup(title, message, actions);
+        var popup = new NotificationPopup(title, message, actions, image: image);
         popup.Show();
         popup.PositionFromConfig();
         return popup;
