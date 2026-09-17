@@ -1,5 +1,14 @@
 # Changelog
 
+## [v5.0.6] - 2026-09-17
+
+### Added
+- **Notification image support**: HA companion-style `image` key in `notify.mobile_app_ha_desklink` — camera snapshots (`/api/camera_proxy/camera.x`), media paths (`/media/local/...`) and absolute URLs are now rendered as an image preview inside the notification popup. Click opens it full size.
+- Failed image downloads show a visible hint (no silent fallback).
+
+### Changed
+- Popup auto-close extended to 12 s when an image is shown.
+
 ## [v5.0.5] - 2026-09-10
 
 ### 🎵 Music Assistant Integration (neu)
