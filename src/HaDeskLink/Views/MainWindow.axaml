@@ -1,130 +1,124 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="HaDeskLink.Views.MainWindow"
-        Title="HA DeskLink Linux"
-        Width="980" Height="640"
+        Title="HA DeskLink"
+        Width="1100" Height="720"
         WindowStartupLocation="CenterScreen"
-        MinWidth="700" MinHeight="480"
-        Background="#1A1A2E">
+        MinWidth="820" MinHeight="560"
+        Background="#0F1117"
+        FontFamily="Inter, Segoe UI, Noto Sans">
 
-    <DockPanel>
-        <!-- ═══ Sidebar (200px, links) — Windows v5.0.1 UI Redesign ═══ -->
-        <Border DockPanel.Dock="Left" Width="200" Background="#16213E">
+    <Window.Styles>
+        <!-- ── Neues Design-System: flach, modern, ruhig ── -->
+        <Style Selector="Button.nav">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#B7BCC8"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#1C2230"/>
+        </Style>
+        <Style Selector="Button.nav.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="#24304A"/>
+        </Style>
+        <Style Selector="Button.nav.active">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#161A24"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
+        </Style>
+        <Style Selector="TextBlock.h1">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#F2F4F8"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style Selector="TextBlock.h2">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#E8EBF0"/>
+        </Style>
+        <Style Selector="TextBlock.desc">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#7A8194"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+        <Style Selector="TextBlock.lbl">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#C4C9D4"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="220,*">
+        <!-- ═══ EINE Sidebar für ALLE Ansichten ═══ -->
+        <Border Grid.Column="0" Background="#12141C">
             <DockPanel>
-                <!-- Sidebar Header -->
-                <StackPanel DockPanel.Dock="Top" Margin="16,14,16,12" Spacing="2">
-                    <TextBlock Text="🏠 HA DeskLink" FontSize="16" FontWeight="Bold" Foreground="White" />
-                    <TextBlock Name="LblVersion" Text="v5.0.4" FontSize="11" Foreground="#8C8CA0" />
+                <StackPanel DockPanel.Dock="Top" Margin="18,18,18,20">
+                    <TextBlock Text="HA DeskLink" FontSize="17" FontWeight="Bold" Foreground="#F2F4F8"/>
+                    <TextBlock Name="LblVersion" Text="v5.1.0" FontSize="11" Foreground="#5C6270" Margin="0,2,0,0"/>
                 </StackPanel>
 
-                <!-- Navigation -->
-                <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,4,0,0">
-                    <Button Name="BtnNavDashboard" Content="  🌐 Dashboard" Background="Transparent" Foreground="#E0E0E0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
-                            BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
-                            ToolTip.Tip="Home Assistant Dashboard im eingebetteten WebView öffnen" />
-                    <Button Name="BtnNavQuickActions" Content="  ⚡ Quick Actions" Background="Transparent" Foreground="#E0E0E0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
-                            BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
-                            ToolTip.Tip="Konfigurierte HA-Entitäten schnell ein-/ausschalten" />
-                    <Button Name="BtnNavWidgets" Content="  🧩 Widgets" Background="Transparent" Foreground="#E0E0E0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
-                            BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
-                            ToolTip.Tip="Desktop-Widgets verwalten (Sensoren, Schalter)" />
-                    <Button Name="BtnNavMusic" Content="  🎵 Music Assistant" Background="Transparent" Foreground="#E0E0E0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
-                            BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
-                            ToolTip.Tip="Music Assistant steuern (Suche, Warteschlange, Player, Lautstärke)" />
-                    <Button Name="BtnNavSettings" Content="  ⚙️ Einstellungen" Background="Transparent" Foreground="#E0E0E0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
-                            BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
-                            ToolTip.Tip="Alle Einstellungen mit Erklärungstexten (Verbindung, MQTT, Hotkeys, ...)" />
-                    <Button Name="BtnNavRefresh" Content="  🔄 Sensoren aktualisieren" Background="Transparent" Foreground="#E0E0E0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="40"
-                            BorderThickness="0" CornerRadius="6" Margin="8,0,8,0" Padding="10,0"
-                            ToolTip.Tip="Alle Sensoren neu bei Home Assistant registrieren" />
+                <StackPanel DockPanel.Dock="Top" Margin="10,0">
+                    <Button Name="NavDashboard" Classes="nav">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="🌐" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Dashboard" FontSize="14" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Name="NavQuickActions" Classes="nav">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚡" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Quick Actions" FontSize="14" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Name="NavMusic" Classes="nav">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🎵" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Musik" FontSize="14" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Name="NavWidgets" Classes="nav">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🧩" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Widgets" FontSize="14" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Name="NavSettings" Classes="nav">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚙️" FontSize="15" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Einstellungen" FontSize="14" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
-                <!-- Links unten -->
-                <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="8,8,8,10">
-                    <Button Name="BtnNavDiscord" Content="  💬 Discord" Background="Transparent" Foreground="#8C8CA0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="36"
-                            BorderThickness="0" CornerRadius="6" Padding="10,0" FontSize="12"
-                            ToolTip.Tip="Community Discord Server – Fragen, Feedback &amp; Hilfe" />
-                    <Button Name="BtnNavGitHub" Content="  📦 GitHub" Background="Transparent" Foreground="#8C8CA0"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" MinHeight="36"
-                            BorderThickness="0" CornerRadius="6" Padding="10,0" FontSize="12"
-                            ToolTip.Tip="HA DeskLink auf GitHub – Releases, Quellcode &amp; Issues" />
-                    <TextBlock Text="Hintergrund-Dienst: systemd" FontSize="10" Foreground="#5A5A7A"
-                               Margin="12,6,0,0" />
+                <StackPanel DockPanel.Dock="Bottom" Margin="14,0,14,16" Spacing="6">
+                    <Button Name="NavRefresh" Classes="nav" Content="🔄  Sensoren aktualisieren" FontSize="12" Height="34"/>
+                    <Button Name="NavDiscord" Classes="nav" Content="💬  Discord" FontSize="12" Height="34"/>
+                    <Button Name="NavGitHub" Classes="nav" Content="📦  GitHub" FontSize="12" Height="34"/>
                 </StackPanel>
-
-                <!-- Füllbereich -->
-                <Border Background="Transparent" />
+                <Border/>
             </DockPanel>
         </Border>
 
-        <!-- ═══ Bottom Bar (unten, immer sichtbar) ═══ -->
-        <Border DockPanel.Dock="Bottom" MinHeight="42" Background="#0F3460" Padding="16,8">
-            <TextBlock Name="LblStatus" Text="✓ Verbunden" FontSize="13" Foreground="#4CAF50" />
+        <!-- ═══ Content-Host: EIN View-Layer ═══ -->
+        <!-- Das Dashboard läuft in einem EIGENEN Fenster (DashboardWindow.Open) —
+             dadurch gibt es KEIN eingebettetes GTK-WebView im Hauptfenster mehr:
+             kein Durchscheinen, kein Ghost-Fenster, keine GTK-Crash-Kette. -->
+        <Border Grid.Column="1" Padding="22,20" Background="#0F1117">
+            <ContentControl Name="ViewHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
         </Border>
-
-        <!-- ═══ Content (füllt den Rest) ═══ -->
-        <ScrollViewer>
-            <StackPanel Margin="20,16" Spacing="14">
-                <!-- Status -->
-                <Border Background="#1E1E2E" CornerRadius="8" Padding="14">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="📊 Status" FontWeight="SemiBold" FontSize="14" Foreground="White" />
-                        <TextBlock Text="HA DeskLink läuft als Hintergrund-Dienst (systemd) oder im GUI-Modus. Das Dashboard öffnet sich in einem eigenen Fenster."
-                                   Foreground="#8C8CA0" FontSize="12" TextWrapping="Wrap" />
-                        <TextBlock Name="LblSensors" Text="Sensoren: werden automatisch an HA gesendet" Foreground="#8C8CA0" FontSize="11" />
-                    </StackPanel>
-                </Border>
-
-                <!-- MQTT Schnellzugriff -->
-                <Border Background="#1E1E2E" CornerRadius="8" Padding="14">
-                    <StackPanel Spacing="8">
-                        <TextBlock Text="📡 MQTT-Einstellungen" FontWeight="SemiBold" FontSize="14" Foreground="White" />
-                        <CheckBox Name="ChkMqttEnabled" Content="MQTT aktivieren" Foreground="#E0E0E0" />
-                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
-                            <TextBlock Text="Broker:" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Foreground="#8C8CA0" FontSize="12" />
-                            <TextBox Name="TxtMqttBroker" Grid.Row="0" Grid.Column="1" Margin="4,2" Text="" />
-                            <TextBlock Text="Port:" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Foreground="#8C8CA0" FontSize="12" />
-                            <TextBox Name="TxtMqttPort" Grid.Row="1" Grid.Column="1" Margin="4,2" Text="1883" />
-                            <TextBlock Text="Benutzername:" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Foreground="#8C8CA0" FontSize="12" />
-                            <TextBox Name="TxtMqttUser" Grid.Row="2" Grid.Column="1" Margin="4,2" Text="" />
-                            <TextBlock Text="Passwort:" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Foreground="#8C8CA0" FontSize="12" />
-                            <TextBox Name="TxtMqttPass" Grid.Row="3" Grid.Column="1" Margin="4,2" Text="" PasswordChar="•" />
-                            <TextBlock Text="Fallback-Adresse:" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Foreground="#8C8CA0" FontSize="12" />
-                            <TextBox Name="TxtMqttFallback" Grid.Row="4" Grid.Column="1" Margin="4,2" Text=""
-                                     ToolTip.Tip="Alternative MQTT-Broker-Adresse (z.B. lokale IP), falls die Hauptadresse nicht erreichbar ist" />
-                        </Grid>
-                        <CheckBox Name="ChkMqttSsl" Content="SSL/TLS verwenden" Foreground="#E0E0E0" />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Name="BtnMqttTest" Content="🔌 Verbindung testen" ToolTip.Tip="MQTT-Verbindung mit den aktuellen Einstellungen testen" />
-                            <Button Name="BtnMqttSave" Content="💾 Speichern" ToolTip.Tip="MQTT-Einstellungen speichern" />
-                        </StackPanel>
-                        <TextBlock Name="LblMqttStatus" Text="" Foreground="#8C8CA0" FontSize="12" TextWrapping="Wrap" />
-                    </StackPanel>
-                </Border>
-
-                <!-- Sprache -->
-                <Border Background="#1E1E2E" CornerRadius="8" Padding="14">
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="🌐 Sprache" FontWeight="SemiBold" FontSize="14" Foreground="White" />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="Sprache:" VerticalAlignment="Center" Foreground="#8C8CA0" FontSize="12" />
-                            <ComboBox Name="CbLanguage" MinWidth="220" />
-                            <Button Name="BtnSaveLanguage" Content="💾 Speichern" ToolTip.Tip="Spracheinstellung speichern" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <!-- Info -->
-                <TextBlock Text="Alle Einstellungen (inkl. Erklärungen) findest du im Sidebar-Punkt ⚙️ Einstellungen."
-                           Foreground="#5A5A7A" FontSize="11" TextWrapping="Wrap" />
-            </StackPanel>
-        </ScrollViewer>
-    </DockPanel>
+    </Grid>
 </Window>

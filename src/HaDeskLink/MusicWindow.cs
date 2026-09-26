@@ -63,6 +63,40 @@ public class MusicWindow : Window
         _ = InitializeAsync();
     }
 
+    private static MusicWindow? _cachedInstance;
+
+    /// <summary>
+    /// Windows-Vision: Musik-UI als EINGEBETETE Ansicht im Hauptfenster
+    /// (liefert das Root-Control, ohne ein Fenster zu zeigen).
+    /// WICHTIG: Die Window-Instanz wird GECACHT und niemals dem GC überlassen —
+    /// das Finalisieren des ungenutzten GTK-Handles crasht mit toggle_ref-Assertions.
+    /// </summary>
+    public static Control CreateEmbedded(Config config)
+    {
+        if (_cachedEmbeddedHost == null)
+        {
+            var win = _cachedEmbeddedHost ??= new MusicWindow(config);
+            var content = win.Content as Control;
+            win.Content = null;
+            win.CanResize = false; // verhindert Größen-Events der toten Fensterinstanz
+            _cachedEmbeddedHost = win;
+            var host = new Border
+            {
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+                Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(255, 26, 26, 46)),
+            };
+            if (content != null)
+                host.Child = content;
+            _cachedEmbeddedHostContent = host;
+            return host;
+        }
+        return _cachedEmbeddedHostContent!;
+    }
+
+    private static MusicWindow? _cachedEmbeddedHost;
+    private static Border? _cachedEmbeddedHostContent;
+
     private Control BuildLayout()
     {
         var dock = new DockPanel();

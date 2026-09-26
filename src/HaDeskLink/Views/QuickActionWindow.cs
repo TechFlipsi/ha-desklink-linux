@@ -153,6 +153,34 @@ public class QuickActionWindow : Window
     }
 
     /// <summary>
+    /// Windows-Vision: Quick-Actions-Liste als EINGEBETTETE Ansicht im Hauptfenster
+    /// (liefert das Root-Control, ohne ein Fenster zu zeigen).
+    /// </summary>
+    public static Control CreateEmbedded(List<QuickAction> actions, HaApiClient api)
+    {
+        var win = new QuickActionWindow(actions, api);
+        var content = win.Content as Control;
+        win.Content = null;
+        // Host mit dunklem Hintergrund + Volle-Breite (sonst scheint der Desktop durch)
+        var host = new Border
+        {
+            Padding = new Thickness(16),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(255, 26, 26, 46)),
+        };
+        if (content is StackPanel sp)
+        {
+            sp.Margin = new Thickness(4);
+            sp.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch;
+            host.Child = sp;
+        }
+        else if (content != null)
+            host.Child = content;
+        return host;
+    }
+
+    /// <summary>
     /// Load Quick Actions from the config JSON (same format as Windows).
     /// </summary>
     public static List<QuickAction> LoadFromConfig(Config config)

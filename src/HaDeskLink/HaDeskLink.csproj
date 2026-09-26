@@ -30,6 +30,7 @@
   <ItemGroup>
     <None Include="VERSION" CopyToOutputDirectory="PreserveNewest" />
     <AvaloniaResource Include="Assets/icon.png" />
+    <AvaloniaResource Include="Assets/icon-tray.png" />
     <None Include="Lang/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

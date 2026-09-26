@@ -192,11 +192,13 @@ public class SettingsWindow : Window
             sectionHost.Children.Add(section);
         }
 
-        // Root: DockPanel — Content zuerst (Fill), dann Sidebar/Bottom (docked)
+        // Root: DockPanel — GEDOCKTE Kinder ZUERST (Sidebar=Left, Bottom=Bottom),
+        // der Fill-Content als LETZTES Kind. Anders herum frisst der Fill-Content
+        // den ganzen Platz und Sidebar/Bottom werden verdrängt (Layout-Bug).
         var root = new DockPanel();
-        root.Children.Add(_contentPanel);   // Fill
-        root.Children.Add(_sidebarPanel);    // Left
+        root.Children.Add(_sidebarPanel);    // Left (zuerst!)
         root.Children.Add(_bottomPanel);     // Bottom
+        root.Children.Add(_contentPanel);   // Fill (zuletzt)
 
         Content = root;
     }
@@ -323,11 +325,15 @@ public class SettingsWindow : Window
     }
 
     // ─── Helper: Grid für 2-Spalten Layout (Label 200px + Rest) ───
-    private static Grid MakeFieldGrid()
+    // WICHTIG: rowDefinitions erzeugen — ohne sie rendert Avalonia ALLE Kinder
+    // übereinander in der ersten Zeile (Ghosting-Bug).
+    private static Grid MakeFieldGrid(int rowCount = 0)
     {
         var g = new Grid { Margin = new Thickness(0, 8, 0, 0) };
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200) });
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        for (int i = 0; i < rowCount; i++)
+            g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
         return g;
     }
 
@@ -414,7 +420,7 @@ public class SettingsWindow : Window
         var stack = new StackPanel { Spacing = 0 };
         stack.Children.Add(MakeSectionHeader("🔌 " + Localization.Get("settings_connection", "Verbindung")));
 
-        var table = MakeFieldGrid();
+        var table = MakeFieldGrid(6);
 
         _urlBox = new TextBox { Text = "https://homeassistant.local:8123", MinHeight = 32 };
         _urlBox.SetValue(Avalonia.Controls.ToolTip.TipProperty, Localization.Get("tooltip_ha_url"));
@@ -460,7 +466,7 @@ public class SettingsWindow : Window
         var stack = new StackPanel { Spacing = 0 };
         stack.Children.Add(MakeSectionHeader("⚙️ " + Localization.Get("settings_general", "Allgemein")));
 
-        var table = MakeFieldGrid();
+        var table = MakeFieldGrid(9);
 
         // Autostart (XDG autostart on Linux)
         _autostartCheck = new CheckBox
@@ -527,7 +533,7 @@ public class SettingsWindow : Window
         var stack = new StackPanel { Spacing = 0 };
         stack.Children.Add(MakeSectionHeader("🎨 " + Localization.Get("settings_appearance", "Erscheinungsbild")));
 
-        var table = MakeFieldGrid();
+        var table = MakeFieldGrid(4);
 
         _languageBox = new ComboBox { MinHeight = 32, HorizontalAlignment = HorizontalAlignment.Stretch };
         foreach (var lang in Localization.AvailableLanguages)
@@ -553,7 +559,7 @@ public class SettingsWindow : Window
         var stack = new StackPanel { Spacing = 0 };
         stack.Children.Add(MakeSectionHeader("🔔 " + Localization.Get("settings_notifications", "Benachrichtigungen")));
 
-        var table = MakeFieldGrid();
+        var table = MakeFieldGrid(4);
 
         // Position
         _notifPosBox = new ComboBox { MinHeight = 32, HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -591,7 +597,7 @@ public class SettingsWindow : Window
         var stack = new StackPanel { Spacing = 0 };
         stack.Children.Add(MakeSectionHeader("⌨️ " + Localization.Get("settings_hotkeys", "Tastenkombinationen")));
 
-        var table = MakeFieldGrid();
+        var table = MakeFieldGrid(6);
 
         // Quick Actions Hotkey
         MakeFieldRow(table, 0, Localization.Get("settings_hotkey_qa"), CreateHotkeyRow(out _hotkeyModBox, out _hotkeyKeyBox));
@@ -647,7 +653,7 @@ public class SettingsWindow : Window
         var stack = new StackPanel { Spacing = 0 };
         stack.Children.Add(MakeSectionHeader("📡 " + Localization.Get("mqtt_settings")));
 
-        var table = MakeFieldGrid();
+        var table = MakeFieldGrid(16);
 
         // MQTT aktivieren
         _mqttEnabledCheck = new CheckBox
@@ -739,7 +745,7 @@ public class SettingsWindow : Window
         var stack = new StackPanel { Spacing = 0 };
         stack.Children.Add(MakeSectionHeader("🎵 " + Localization.Get("ma_settings", "Music Assistant")));
 
-        var table = MakeFieldGrid();
+        var table = MakeFieldGrid(7);
 
         _maHostBox = new TextBox { Watermark = "192.168.1.100", MinHeight = 32 };
         _maHostBox.SetValue(Avalonia.Controls.ToolTip.TipProperty, Localization.Get("ma_host_tooltip", "Host/IP deines Music-Assistant-Servers (TrueNAS-App oder HA-Add-on)"));
@@ -1209,7 +1215,7 @@ public class SettingsWindow : Window
         var stack = new StackPanel { Spacing = 0 };
         stack.Children.Add(MakeSectionHeader("🔊 " + Localization.Get("settings_streaming", "Streaming")));
 
-        var table = MakeFieldGrid();
+        var table = MakeFieldGrid(5);
 
         // Enable toggle
         _streamEnabledCheck = new CheckBox
@@ -2011,6 +2017,27 @@ public class SettingsWindow : Window
         }
         _instance = new SettingsWindow(config, onReconnect, api);
         _instance.Show();
+    }
+
+    /// <summary>
+    /// Windows-Vision: Erzeugt die Settings-UI als EINGEBETTETE Ansicht
+    /// (liefert das Root-Control des Fensterinhalts, ohne ein Fenster zu zeigen).
+    /// </summary>
+    public static Control CreateEmbedded(Config config, Action onReconnect, HaApiClient? api = null)
+    {
+        var win = new SettingsWindow(config, onReconnect, api);
+        var content = win.Content as Control;
+        win.Content = null;  // Fenster-Instanz bleibt ungenutzt (nie Show())
+        // Host mit App-Hintergrund (sonst transparent + Desktop scheint durch)
+        var host = new Border
+        {
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Stretch,
+            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromArgb(255, 26, 26, 46)),
+        };
+        if (content != null)
+            host.Child = content;
+        return host;
     }
 }
 
