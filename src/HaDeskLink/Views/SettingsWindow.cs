@@ -747,7 +747,7 @@ public class SettingsWindow : Window
 
         var table = MakeFieldGrid(7);
 
-        _maHostBox = new TextBox { Watermark = "192.168.1.100", MinHeight = 32 };
+        _maHostBox = new TextBox { Watermark = "homeassistant.local oder 192.168.1.100", MinHeight = 32 };
         _maHostBox.SetValue(Avalonia.Controls.ToolTip.TipProperty, Localization.Get("ma_host_tooltip", "Host/IP deines Music-Assistant-Servers (TrueNAS-App oder HA-Add-on)"));
         MakeFieldRow(table, 0, Localization.Get("ma_host", "MA-Host"), _maHostBox);
         AddDescriptionRow(table, 1, "ma_host_desc");
